@@ -36,7 +36,7 @@
 	color = "#555555"
 	force = 5
 	ammo_cats = list(AMMO_BEEPSKY)  // hell if I know
-	internal_ammo_capacity = 100
+	max_ammo_capacity = 100
 	auto_eject = 0
 
 	flags =  FPRINT | TABLEPASS | CONDUCT | USEDELAY | EXTRADELAY

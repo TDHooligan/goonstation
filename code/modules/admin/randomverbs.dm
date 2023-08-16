@@ -2839,21 +2839,21 @@ var/global/force_radio_maptext = FALSE
 	var/obj/item/gun/kinetic/pistol/button_2 = new()
 	button_2.name = "pistol"
 	button_2.desc = "To defeat the spacemans, shoot him until he dies."
-	button_2.internal_ammo_capacity = 400
+	button_2.max_ammo_capacity = 400
 	button_2.ammo.amount_left = 400
 	button_2.cant_other_remove = 1
 
 	var/obj/item/gun/kinetic/spes/button_3 = new()
 	button_3.name = "shotgun"
 	button_3.desc = "Somehow fits 100 shells."
-	button_3.internal_ammo_capacity = 100	// this is a backpack, after all
+	button_3.max_ammo_capacity = 100	// this is a backpack, after all
 	button_3.ammo.amount_left = 100
 	button_3.cant_other_remove = 1
 
 	var/obj/item/gun/kinetic/minigun/button_4 = new()
 	button_4.name = "chaingun"
 	button_4.desc = "Chainguns direct heavy firepower into your opponent, making them do the chaingun cha-cha."
-	button_4.internal_ammo_capacity = 400	// boolet
+	button_4.max_ammo_capacity = 400	// boolet
 	button_4.ammo.amount_left = 400
 	button_4.cant_other_remove = 1
 
@@ -2861,7 +2861,7 @@ var/global/force_radio_maptext = FALSE
 	button_5.name = "rocket launcher"
 	button_5.desc = "Splash damage zone!"
 	button_5.ammo.amount_left = 100
-	button_5.internal_ammo_capacity = 100
+	button_5.max_ammo_capacity = 100
 	button_5.cant_other_remove = 1
 
 	// were you expecting a plasma gun or something?

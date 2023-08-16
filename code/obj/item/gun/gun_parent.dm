@@ -292,9 +292,6 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 /obj/item/gun/proc/alter_projectile(var/obj/projectile/P)
 	return
 
-/obj/item/gun/proc/alter_firemode(var/datum/firemode/F)
-	return
-
 /obj/item/gun/proc/shoot_point_blank(atom/target, var/mob/user as mob, var/second_shot = 0, var/skip_charge_up = FALSE)
 	if (!target || !user)
 		return FALSE
@@ -387,8 +384,7 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 		spread += 5 * how_drunk
 	spread = max(spread, spread_angle)
 
-	var/datum/firemode/FM = current_projectile.default_firemode
-	src.alter_firemode(FM)
+	var/datum/firemode/fireMode = override_firemode()
 	for (var/i = 0; i < FM.shot_number; i++)
 		var/obj/projectile/P = initialize_projectile_pixel_spread(user, current_projectile, target, 0, 0, spread, alter_proj = new/datum/callback(src, PROC_REF(alter_projectile)))
 		if (!P)

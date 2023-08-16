@@ -241,7 +241,7 @@
 	force = 15
 	contraband = 8
 	ammo_cats = list(AMMO_CASELESS_G11)
-	internal_ammo_capacity = 45
+	max_ammo_capacity = 45
 	can_dual_wield = 0
 	two_handed = 1
 	var/datum/projectile/bullet/g11/small/smallproj = new
@@ -343,7 +343,7 @@
 	name = "\improper Hydra smart pistol"
 	desc = "A silenced pistol capable of locking onto multiple targets and firing on them in rapid sequence. \"Anderson Para-Munitions\" is engraved on the slide."
 	silenced = 1
-	internal_ammo_capacity = 30
+	max_ammo_capacity = 30
 	New()
 		..()
 		ammo.amount_left = 30
@@ -384,7 +384,7 @@
 	icon_state = "gyrojet"
 	item_state = "gyrojet"
 	ammo_cats = list(AMMO_GYROJET)
-	internal_ammo_capacity = 6
+	max_ammo_capacity = 6
 	has_empty_state = 1
 	default_magazine = /obj/item/ammo/bullets/gyrojet
 	fire_animation = TRUE
@@ -432,7 +432,7 @@
 	force = 10.0 //mmm, pistol whip
 	throwforce = 20 //HEAVY pistol
 	auto_eject = 1
-	internal_ammo_capacity = 7
+	max_ammo_capacity = 7
 	ammo_cats = list(AMMO_PISTOL_ALL, AMMO_REVOLVER_ALL, AMMO_DEAGLE) //the omnihandgun
 	has_empty_state = 1
 	gildable = 1

@@ -463,7 +463,7 @@ var/list/special_parrot_species = list("ikea" = /datum/species_info/parrot/kea/i
 	item_state = "paintball-"
 	m_amt = 2000
 	ammo = null
-	internal_ammo_capacity = 10
+	max_ammo_capacity = 10
 
 	auto_eject = 0
 	casings_to_eject = 0
