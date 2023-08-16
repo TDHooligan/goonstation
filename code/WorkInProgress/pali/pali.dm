@@ -36,7 +36,7 @@
 	color = "#555555"
 	force = 5
 	ammo_cats = list(AMMO_BEEPSKY)  // hell if I know
-	max_ammo_capacity = 100
+	internal_ammo_capacity = 100
 	auto_eject = 0
 
 	flags =  FPRINT | TABLEPASS | CONDUCT | USEDELAY | EXTRADELAY
@@ -61,7 +61,7 @@
 
 	afterattack(atom/A, mob/user as mob)
 		if(istype(A, /obj/machinery/bot/secbot))
-			src.ammo.amount_left += 1
+			src.ammo?.amount_left += 1
 			user.visible_message("<span class='alert'>[user] loads \the [A] into \the [src].</span>", "<span class='alert'>You load \the [A] into \the [src].</span>")
 			qdel(A)
 			return
@@ -71,7 +71,7 @@
 /obj/item/gun/kinetic/beepsky/one_bullet
 	New()
 		. = ..()
-		src.ammo.amount_left = 1
+		src.ammo?.amount_left = 1
 		src.ammo.max_amount = 1
 
 

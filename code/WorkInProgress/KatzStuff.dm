@@ -9,7 +9,7 @@
 	force = MELEE_DMG_RIFLE
 	contraband = 8
 	ammo_cats = list(AMMO_AUTO_308)
-	max_ammo_capacity = 20
+	internal_ammo_capacity = 20
 	can_dual_wield = 0
 	two_handed = 1
 	auto_eject = 1

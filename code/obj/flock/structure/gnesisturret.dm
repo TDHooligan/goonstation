@@ -37,7 +37,6 @@
 		..(location, F)
 		ensure_reagent_holder()
 		src.current_projectile = new /datum/projectile/syringe/syringe_barbed/gnesis(src)
-		src.current_projectile.shot_number = 4
 		src.info_tag.set_info_tag("Gnesis: [src.reagents.total_volume]/[src.fluid_level_max]")
 
 
@@ -108,7 +107,7 @@
 			src.compute = -base_compute
 			src.update_flock_compute("apply")
 
-		if(src.reagents.total_volume >= src.current_projectile.cost*src.current_projectile.shot_number)
+		if(src.reagents.total_volume >= src.current_projectile.cost*src.current_projectile.firemode.shot_number)
 			//shamelessly stolen from deployable_turret.dm
 			if(!src.target && !src.seek_target()) //attempt to set the target if no target
 				return
@@ -119,9 +118,9 @@
 				if(src.target)
 					logTheThing(LOG_COMBAT, src, "Flock gnesis turret at [log_loc(src)] belonging to flock [src.flock?.name] fires at [constructTarget(src.target)].")
 					SPAWN(0)
-						for(var/i in 1 to src.current_projectile.shot_number) //loop animation until finished
+						for(var/i in 1 to src.current_projectile.firemode.shot_number) //loop animation until finished
 							muzzle_flash_any(src, get_angle(src, src.target), "muzzle_flash")
-							sleep(src.current_projectile.shot_delay)
+							sleep(src.current_projectile.firemode.shoot_delay)
 					shoot_projectile_ST_pixel_spread(src, current_projectile, target, 0, 0 , spread)
 
 	sapper_power()
@@ -201,6 +200,7 @@
 	icon_state = "stunbolt"
 	cost = 10 //how much gnesis you get per-shot
 	implanted = /obj/item/implant/projectile/body_visible/syringe/syringe_barbed/gnesis_nanites
+	default_firemode = /datum/firemode/four_burst
 
 	var/obj/flock_structure/gnesisturret/parentTurret = null
 

@@ -463,7 +463,7 @@ var/list/special_parrot_species = list("ikea" = /datum/species_info/parrot/kea/i
 	item_state = "paintball-"
 	m_amt = 2000
 	ammo = null
-	max_ammo_capacity = 10
+	internal_ammo_capacity = 10
 
 	auto_eject = 0
 	casings_to_eject = 0
@@ -481,7 +481,7 @@ var/list/special_parrot_species = list("ikea" = /datum/species_info/parrot/kea/i
 	ks_ratio = 1
 	sname = "red"
 	shot_sound = 'sound/impact_sounds/Generic_Stab_1.ogg'
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 	damage_type = D_KINETIC
 	hit_type = DAMAGE_BLUNT
 	hit_ground_chance = 50

@@ -969,6 +969,26 @@
 					maptext_out = "<I>irritably shuffles around</I>"
 				m_type = 1
 
+			if ("rack")
+				if (!src.restrained())
+					var/obj/item/gun/kinetic/firearm
+					if (istype (l_hand, /obj/item/gun/kinetic))
+						firearm = src.l_hand
+					else if (istype (r_hand, /obj/item/gun/kinetic))
+						firearm = src.r_hand
+
+					if (!firearm)
+						message = "<B>[src]</B> racks an imaginary shotgun."
+						maptext_out = "<I>racks an imaginary shotgun</I>"
+					else
+						if (firearm.rack_emote(src))
+							message = "<B>[src]</B> racks \the [firearm]."
+							maptext_out = "<I>racks \the [firearm]</I>"
+				else
+					message = "<B>[src]</B> struggles to move."
+					maptext_out = "<I>struggles to move</I>"
+				m_type = 1
+
 			if ("stretch")
 				if (!src.restrained())
 					message = "<B>[src]</B> stretches."

@@ -9,13 +9,8 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	/// set 0 to be 'open-bolt' IE, no slotting bullets directly into the chamber
 	var/internal_ammo_capacity = 1
 
-	var/obj/item/ammo/magazine/magazine = null
-	/// Can this gun use detachable magazines?
-	var/can_hold_magazine = FALSE
 	/// Can this gun shoot less than a full burst?
 	var/can_shoot_partially = TRUE
-	var/has_magless_state = FALSE
-
 	/// Can be a list too. The .357 Mag revolver can also chamber .38 Spc rounds, for instance (Convair880).
 	var/ammo_cats = null
 	/// Does this gun have a special icon state for having no ammo lefT?
@@ -89,6 +84,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		else
 			. += "<span class='alert'>*ERROR* No output selected!</span>"
 
+
 	update_icon()
 
 		if (src.ammo || src.magazine)
@@ -97,7 +93,6 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			inventory_counter?.update_text("-")
 
 		var/iconString = ""
-		var/empty = 0
 
 		//there is definitely a better way to do this and keep these strings in the right order
 		src.icon_state = replacetext(src.icon_state, "-empty", "")
@@ -145,6 +140,34 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		else
 			ammo = src.magazine?.ammo_left()
 		return ammo
+
+	proc/rack_emote(var/mob/user) //dramatic! useful! also silly!
+		if (can_hold_magazine)
+			var/success = TRUE //did we actually rack the slide?
+			if (src.ammo?.amount_left > 0)
+				var/turf/T = get_turf(src)
+				var/dramaticCasings[0]
+				var/obj/item/ammo/bullets/oldAmmo = new src.ammo.type
+				if(T)
+					for (var/i=1 to src.ammo.amount_left)
+						var/obj/item/fakeCasing = new src.current_projectile.casing(T)
+						fakeCasing.anchored = TRUE // stop pickup
+						dramaticCasings += fakeCasing
+				oldAmmo.amount_left = src.ammo.amount_left
+				src.ammo.amount_left = 0
+				SPAWN(0.5 SECONDS)
+					user.slip(walking_matters = 0, ignore_actual_delay = 0, running = 1, throw_type=THROW_PEEL_SLIP)
+				SPAWN(1 SECONDS)
+					for (var/obj/case in dramaticCasings)
+						qdel(case)
+					oldAmmo.set_loc(T)
+
+			playsound(src, 'sound/items/pickup_gun.ogg', 60, 0)
+			if (magazine?.ammo_left() > 0)
+				src.ammo = magazine.pull_ammo(internal_ammo_capacity) || src.ammo
+			src.UpdateIcon()
+			return success
+		return FALSE
 
 	proc/use_ammo(var/quantity)
 		var/ammoLeft = src.ammo?.amount_left
@@ -341,6 +364,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 	proc/eject_magazine(mob/user)
 		if (src.magazine)
+			playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
 			user.put_in_hand_or_drop(src.magazine)
 			src.magazine.UpdateIcon()
 			src.magazine = null
@@ -373,6 +397,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			ammoHand.UpdateIcon()
 			user.put_in_hand_or_drop(ammoHand)
 			ammoHand.after_unload(user)
+			playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
 
 			// The gun may have been fired; eject casings if so.
 			src.ejectcasings()
@@ -749,7 +774,6 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	icon_state = "faith"
 	force = MELEE_DMG_PISTOL
 	ammo_cats = list(AMMO_PISTOL_22)
-	internal_ammo_capacity = 1
 	auto_eject = 1
 	w_class = W_CLASS_SMALL
 	muzzle_flash = null
@@ -757,6 +781,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	default_ammo = /obj/item/ammo/bullets/bullet_22
 	default_magazine = /obj/item/ammo/magazine/bullet_22/faith
 	fire_animation = TRUE
+	internal_ammo_capacity = 1
 	can_hold_magazine = TRUE
 
 	New()
@@ -773,18 +798,20 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_PISTOL
 	contraband = 4
 	ammo_cats = list(AMMO_PISTOL_22)
-	internal_ammo_capacity = 10
+	internal_ammo_capacity = 1
+	can_hold_magazine = TRUE
 	auto_eject = 1
 	hide_attack = ATTACK_FULLY_HIDDEN
 	muzzle_flash = null
 	has_empty_state = 1
 	fire_animation = TRUE
-	default_magazine = /obj/item/ammo/bullets/bullet_22HP
+	default_ammo = /obj/item/ammo/bullets/bullet_22HP
+	default_magazine = /obj/item/ammo/magazine/bullet_22
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_22, /obj/item/ammo/bullets/bullet_22HP)
 	ammobag_restock_cost = 1
 
 	New()
-		ammo = new default_magazine
+		magazine = new default_magazine
 		set_current_projectile(new/datum/projectile/bullet/bullet_22/HP)
 		..()
 
@@ -2020,16 +2047,17 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_PISTOL
 	contraband = 4
 	ammo_cats = list(AMMO_PISTOL_9MM_ALL)
-	internal_ammo_capacity = 15
+	internal_ammo_capacity = 1
 	auto_eject = 1
 	has_empty_state = 1
 	fire_animation = TRUE
-	default_magazine = /obj/item/ammo/bullets/bullet_9mm
+	can_hold_magazine = TRUE
+	default_magazine = /obj/item/ammo/magazine/bullet_9mm
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_9mm)
 	ammobag_restock_cost = 1
 
 	New()
-		ammo = new default_magazine
+		magazine = new default_magazine
 		set_current_projectile(new/datum/projectile/bullet/bullet_9mm)
 		..()
 

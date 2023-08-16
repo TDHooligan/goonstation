@@ -13,7 +13,7 @@ ABSTRACT_TYPE(/datum/projectile/bullet)
 //file location for the sound you want it to play
 	shot_sound = 'sound/weapons/Gunshot.ogg'
 //How many projectiles should be fired, each will cost the full cost
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 
 	// caliber list: update as needed
 	// 0.22 pistol / zipgun
@@ -111,7 +111,7 @@ toxic - poisons
 	cost = 1
 	damage_type = D_KINETIC
 	hit_type = DAMAGE_CUT
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 	impact_image_state = "bhole-small"
 	implanted = /obj/item/implant/projectile/bullet_308
 	casing = /obj/item/casing/rifle
@@ -125,7 +125,7 @@ toxic - poisons
 	sname = "burst fire"
 	damage = 45
 	cost = 2
-	shot_number = 2
+	default_firemode = /datum/firemode/two_burst
 
 	armor_piercing
 		damage_type = D_PIERCING
@@ -138,7 +138,7 @@ toxic - poisons
 	shot_sound = 'sound/weapons/minigunshot.ogg'
 	damage = 10
 	cost = 1
-	shot_number = 1 //dont question it
+	default_firemode = /datum/firemode/single //dont question it
 	dissipation_delay = 7
 	damage_type = D_KINETIC
 	hit_type = DAMAGE_CUT
@@ -158,8 +158,7 @@ toxic - poisons
 	cost = 3
 	damage_type = D_KINETIC
 	hit_type = DAMAGE_CUT
-	shot_number = 3
-	shot_delay = 120 MILLI SECONDS
+	default_firemode = /datum/firemode/akm/burst
 	impact_image_state = "bhole-small"
 	implanted = /obj/item/implant/projectile/bullet_308
 	casing = /obj/item/casing/rifle
@@ -267,8 +266,7 @@ toxic - poisons
 	shot_sound = 'sound/weapons/minigunshot.ogg'
 	damage = 15
 	cost = 8
-	shot_number = 8
-	shot_delay = 0.1 SECONDS
+	default_firemode = /datum/firemode/lmg/burst
 	dissipation_delay = 12
 	damage_type = D_KINETIC
 	hit_type = DAMAGE_CUT
@@ -288,13 +286,12 @@ toxic - poisons
 		sname = "full auto"
 		shot_volume = 66
 		cost = 1
-		shot_number = 1
+		default_firemode = /datum/firemode/single
 
 /datum/projectile/bullet/lmg/weak
 	damage = 1
 	cost = 2
-	shot_number = 16
-	shot_delay = 0.07 SECONDS
+	default_firemode = /datum/firemode/lmg/weak
 	dissipation_delay = 8
 	silentshot = 1
 	slow = 0
@@ -314,7 +311,18 @@ toxic - poisons
 	smg
 		damage = 20
 		cost = 3
-		shot_number = 3
+		default_firemode = /datum/firemode/three_burst
+
+		incendiary
+			icon_state = "flare"
+			on_hit(atom/hit, direction, obj/projectile/P)
+				if (isliving(hit))
+					fireflash(get_turf(hit), 0)
+					hit.changeStatus("staggered", clamp(P.power/8, 5, 1) SECONDS)
+				else if (isturf(hit))
+					fireflash(hit, 0)
+				else
+					fireflash(get_turf(hit), 0)
 
 
 /datum/projectile/bullet/nine_mm_NATO
@@ -339,13 +347,13 @@ toxic - poisons
 				M.changeStatus("slowed", 1 SECOND, optional = 2)
 
 /datum/projectile/bullet/nine_mm_NATO/burst
-	shot_number = 3
+	default_firemode = /datum/firemode/three_burst
 	cost = 3
 	sname = "burst fire"
 
 /datum/projectile/bullet/nine_mm_NATO/auto
 	fullauto_valid = 1
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 	cost = 1
 	shot_volume = 66
 	sname = "full auto"
@@ -378,8 +386,7 @@ toxic - poisons
 	sname = "burst fire"
 	damage = 15
 	cost = 3
-	shot_number = 3
-
+	default_firemode = /datum/firemode/three_burst
 
 //0.357
 /datum/projectile/bullet/revolver_357
@@ -1468,13 +1475,13 @@ datum/projectile/bullet/autocannon
 	dissipation_delay = 30
 	shot_sound = 'sound/weapons/rocket.ogg'
 	impact_image_state = "bhole-large"
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 	cost = 1
 	damage = 15
 	icon_state = "mininuke"
 	max_speed = 10
 	start_speed = 10
-	shot_delay = 1 SECONDS
+	default_firemode = /datum/firemode/mrl
 
 	on_hit(atom/hit)
 		var/turf/T = get_turf(hit)

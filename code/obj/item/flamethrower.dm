@@ -706,31 +706,29 @@ A Flamethrower in various states of assembly
 			var/new_mode = params["mode"]
 			playsound(src, 'sound/effects/valve_creak.ogg', 15, 1)
 			src.current_projectile.fullauto_valid = 1
-			src.current_projectile.shot_number = 1
+			src.current_projectile.default_firemode = /datum/firemode/flamethrower
 			switch(new_mode)
 				if("auto") // mid-range automatic
 					src.mode = FLAMER_MODE_AUTO
 					src.spread_angle = 15
 					src.shoot_delay = 4 DECI SECONDS
 					src.chem_divisor = 2
-					src.current_projectile.shot_number = 2
-					src.current_projectile.shot_delay = 2 DECI SECONDS
+					src.current_projectile.default_firemode = /datum/firemode/flamethrower/auto
 				if("burst") // close range burst
 					src.mode = FLAMER_MODE_BURST
 					src.spread_angle = 33
-					src.current_projectile.shot_number = 4
+					src.current_projectile.default_firemode = /datum/firemode/flamethrower/burst
 					src.chem_divisor = 4 //4 shots per burst
-					src.shoot_delay = 1 SECOND
 					src.current_projectile.fullauto_valid = 0
 				if("semi_auto") // single line (default)
 					src.mode = FLAMER_MODE_SINGLE
 					src.current_projectile.fullauto_valid = 0
 					src.spread_angle = 0
-					src.shoot_delay = 1 SECOND
+					src.current_projectile.default_firemode = /datum/firemode/flamethrower
 					src.chem_divisor = 1 //1 line per second
 				else //default to backtank flamer???
 					src.spread_angle = 5
-					src.shoot_delay = 2 DECI SECONDS
+					src.current_projectile.default_firemode = /datum/firemode/flamethrower/backtank
 					src.chem_divisor = 1 //hehehe
 
 			AddComponent(/datum/component/holdertargeting/fullauto, src.shoot_delay, src.shoot_delay, 1)

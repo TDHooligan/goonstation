@@ -19,7 +19,7 @@
 //file location for the sound you want it to play
 	shot_sound = 'sound/weapons/Taser.ogg'
 //How many projectiles should be fired, each will cost the full cost
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 	ie_type = "E"
 //What is our damage type
 /*
@@ -105,7 +105,7 @@ toxic - poisons
 	dissipation_delay = 1
 	dissipation_rate = 8
 	max_range = 7
-	shot_number = 2
+	default_firemode = /datum/firemode/two_burst
 
 /datum/projectile/laser/asslaser // heh
 	name = "assault laser"
@@ -299,7 +299,7 @@ toxic - poisons
 
 	burst
 		cost = 50
-		shot_number = 3
+		default_firemode = /datum/firemode/three_burst
 
 /datum/projectile/laser/precursor // for precursor traps
 	name = "rydberg-matter bolt"
@@ -349,7 +349,7 @@ toxic - poisons
 	name = "burst laser"
 	sname = "burst laser"
 	shot_sound = 'sound/weapons/snipershot.ogg'
-	shot_number = 3
+	default_firemode = /datum/firemode/three_burst
 	cost = 100
 	damage = 35
 	color_red = 0.4
@@ -370,7 +370,7 @@ toxic - poisons
 	color_red = 0.4
 	color_green = 0.5
 	color_blue = 0.7
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 
 
 // blaster projectiles
@@ -388,12 +388,12 @@ toxic - poisons
 	color_red = 0
 	color_green = 1
 	color_blue = 0.1
-	shot_number = 1
+	default_firemode = /datum/firemode/single
 
 	burst
 		damage = 25
 		cost = 50
-		shot_number = 4
+		default_firemode = /datum/firemode/four_burst
 		icon_state = "modproj2"
 		shot_sound = 'sound/weapons/laser_c.ogg'
 
@@ -402,7 +402,7 @@ toxic - poisons
 		damage = 66
 		cost = 100
 		icon_state = "crescent"
-		shot_number = 1
+		default_firemode = /datum/firemode/single
 
 /datum/projectile/laser/blaster/pod_pilot
 	cost = 20
@@ -570,7 +570,7 @@ toxic - poisons
 
 	disruption = 8
 
-	shot_number = 2
+	default_firemode = /datum/firemode/two_burst
 	ie_type = "E"
 	hit_mob_sound = 'sound/effects/sparks6.ogg'
 
@@ -607,8 +607,7 @@ toxic - poisons
 /datum/projectile/laser/plasma/burst
 	cost = 60
 	damage = 20
-	shot_number = 4
-	shot_delay = 1
+	default_firemode = /datum/firemode/plasma_burst
 	shot_volume = 75
 	projectile_speed = 42
 

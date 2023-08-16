@@ -8,6 +8,8 @@
 	var/loaded_ammo = /obj/item/ammo/bullets/bullet_9mm
 	var/obj/item/ammo/bullets/ammo
 	var/sound_load = 'sound/weapons/gunload_light.ogg'
+	name = "magazine"
+
 
 	// Can you use this like a handful of bullets?
 	var/auto_load = FALSE
@@ -126,6 +128,13 @@
 		incen
 			icon_state = "smg_magazine_inc"
 			loaded_ammo = /obj/item/ammo/bullets/bullet_9mm/smg/incendiary
+
+	bullet_9mm
+		icon_state = "pistol_magazine"
+		start_amount = 15
+		max_amount = 15
+		desc = "A handgun magazine full of 9x19mm rounds, an intermediate pistol cartridge."
+		loaded_ammo = /obj/item/ammo/bullets/bullet_9mm
 
 
 	bullet_22

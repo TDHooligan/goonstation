@@ -1255,7 +1255,6 @@
 	dissipation_delay = 4
 	sname = "stunbolt"
 	shot_sound = 'sound/weapons/laser_f.ogg'
-	shot_number = 1
 	window_pass = TRUE
 	brightness = 1
 	color_red = 0.5

@@ -774,7 +774,7 @@
 	dissipation_delay = 8
 	sname = "slime"
 	shot_sound = 'sound/voice/blob/blobshoot.ogg'
-	shot_number = 0
+	default_firemode = /datum/firemode/slime
 	damage_type = D_SPECIAL
 	hit_ground_chance = 50
 	window_pass = 0
