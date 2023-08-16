@@ -136,7 +136,7 @@
 		K.ejectcasings()
 
 		// We can't delete A here, because there's going to be ammo left over.
-		if (K.internal_ammo_capacity < A.amount_left)
+		if (K.max_ammo_capacity < A.amount_left)
 			// Some ammo boxes have dynamic icon/desc updates we can't get otherwise.
 			var/obj/item/ammo/bullets/ammoDrop = new K.ammo.type
 			ammoDrop.amount_left = K.ammo.amount_left
@@ -216,7 +216,7 @@
 			K.ammo.amount_left = 0
 		if (src.amount_left < 1)
 			return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty.
-		if (K.ammo.amount_left >= K.internal_ammo_capacity)
+		if (K.ammo.amount_left >= K.max_ammo_capacity)
 			if (K.ammo.ammo_type.type != src.ammo_type.type)
 				return AMMO_RELOAD_TYPE_SWAP // Call swap().
 			return AMMO_RELOAD_ALREADY_FULL // Gun's full.
@@ -243,12 +243,12 @@
 
 				//DEBUG_MESSAGE("Equalized [K]'s ammo type to [src.type]")
 
-			var/move_amount = min(src.amount_left, K.internal_ammo_capacity - K.ammo.amount_left)
+			var/move_amount = min(src.amount_left, K.max_ammo_capacity - K.ammo.amount_left)
 			src.amount_left -= move_amount
 			K.ammo.amount_left += move_amount
 			K.ammo.ammo_type = src.ammo_type
 
-			if ((src.amount_left < 1) && (K.ammo.amount_left < K.internal_ammo_capacity))
+			if ((src.amount_left < 1) && (K.ammo.amount_left < K.max_ammo_capacity))
 				src.UpdateIcon()
 				K.UpdateIcon()
 				K.ammo.UpdateIcon()
@@ -256,7 +256,7 @@
 					//DEBUG_MESSAGE("[K]: [src.type] (now empty) was deleted on partial reload.")
 					qdel(src) // No duplicating empty magazines, please (Convair880).
 				return AMMO_RELOAD_PARTIAL // Couldn't fully reload the gun.
-			if ((src.amount_left >= 0) && (K.ammo.amount_left == K.internal_ammo_capacity))
+			if ((src.amount_left >= 0) && (K.ammo.amount_left == K.max_ammo_capacity))
 				src.UpdateIcon()
 				K.UpdateIcon()
 				K.ammo.UpdateIcon()
