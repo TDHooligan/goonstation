@@ -5,8 +5,6 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	item_state = "gun"
 	m_amt = 2000
 	var/obj/item/ammo/bullets/ammo = null
-	/// How much ammo can this gun hold internally? IE, number of barrels/tube length.
-	/// set 0 to be 'open-bolt' IE, no slotting bullets directly into the chamber
 	var/max_ammo_capacity = 1
 
 	/// Can this gun shoot less than a full burst?
@@ -223,7 +221,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			else
 				if (src.casings_to_eject < 0)
 					src.casings_to_eject = 0
-				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo.amount_left+src)
+				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo.amount_left)
 
 		if (fire_animation)
 			if(src.ammo.amount_left >= 1)
