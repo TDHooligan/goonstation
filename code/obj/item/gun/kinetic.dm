@@ -8,7 +8,10 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	/// How much ammo can this gun hold internally? IE, number of barrels/tube length.
 	/// set 0 to be 'open-bolt' IE, no slotting bullets directly into the chamber
 	var/internal_ammo_capacity = 1
-
+	var/obj/item/ammo/magazine/magazine = null
+	/// Can this gun use detachable magazines?
+	var/can_hold_magazine = FALSE
+	var/has_magless_state = FALSE
 	/// Can this gun shoot less than a full burst?
 	var/can_shoot_partially = TRUE
 	/// Can be a list too. The .357 Mag revolver can also chamber .38 Spc rounds, for instance (Convair880).
@@ -2065,7 +2068,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		..()
-		ammo.amount_left = 0
+		magazine.ammo.amount_left = 0
 		UpdateIcon()
 
 /obj/item/gun/kinetic/pistol/smart/mkII

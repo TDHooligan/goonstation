@@ -918,9 +918,9 @@ ABSTRACT_TYPE(/obj/item/storage/belt/gun)
 	slots = 5
 	check_wclass = 0
 	gun_type = /obj/item/gun/kinetic/pistol
-	can_hold = list(/obj/item/ammo/bullets/bullet_9mm)
+	can_hold = list(/obj/item/ammo/magazine/bullet_9mm)
 	can_hold_exact = list(/obj/item/gun/kinetic/pistol)
-	spawn_contents = list(/obj/item/gun/kinetic/pistol, /obj/item/ammo/bullets/bullet_9mm = 4)
+	spawn_contents = list(/obj/item/gun/kinetic/pistol, /obj/item/ammo/magazine/bullet_9mm = 4)
 
 /obj/item/storage/belt/gun/smartgun
 	name = "smartpistol belt"
