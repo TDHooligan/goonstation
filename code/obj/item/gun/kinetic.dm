@@ -101,7 +101,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		return 0
 
 	override_firemode()
-		var/ammoRemaining = get_ammo()
+		var/ammoRemaining = src.ammo.amount_left
 		if (ammoRemaining >= src.current_projectile.cost)
 			return null
 
@@ -118,11 +118,11 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		if(can_shoot_partially)
 			var/ammo_per_shot = src.current_projectile.cost / src.current_projectile.firemode.shot_number
 			var/ammoCost = firemode.shot_number * ammo_per_shot
-			if(use_ammo(ammoCost))
+			if(src.ammo.use(ammoCost))
 				return 1
 		else
 			if(src.ammo && src.current_projectile)
-				if(use_ammo(current_projectile.cost))
+				if(src.ammo.use(current_projectile.cost))
 					return 1
 		boutput(user, "<span class='alert'>*click* *click*</span>")
 		if (!src.silenced)
@@ -134,68 +134,47 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			src.Attackby(O, user)
 		return ..()
 
-	attackby(obj/item/ammo/item, mob/user)
-		var/result = 0
-		var/amountLeft = 0
-		if(istype(item, /obj/item/ammo/bullets))
-			var/obj/item/ammo/bullets/b = item
+	attackby(obj/item/ammo/bullets/b, mob/user)
+		if(istype(b, /obj/item/ammo/bullets))
 			if(ON_COOLDOWN(src, "reload_spam", 2 DECI SECONDS))
 				return
-			result = b.loadammo(src, usr)
-			amountLeft = b.amount_left
-		else if (istype(item, /obj/item/ammo/magazine))
-			var/obj/item/ammo/magazine/b = item
-			if(ON_COOLDOWN(src, "reload_spam", 2 DECI SECONDS))
-				return
-			result = b.loadammo(src, usr)
-			amountLeft = b.ammo.amount_left
+			switch (src.ammo.loadammo(b,src))
+				if(0)
+					user.show_text("You can't reload this gun.", "red")
+					return
+				if(AMMO_RELOAD_INCOMPATIBLE)
+					user.show_text("This ammo won't fit!", "red")
+					return
+				if(AMMO_RELOAD_SOURCE_EMPTY)
+					user.show_text("There's no ammo left in [b.name].", "red")
+					return
+				if(AMMO_RELOAD_ALREADY_FULL)
+					user.show_text("[src] is full!", "red")
+					return
+				if(AMMO_RELOAD_PARTIAL)
+					user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>There wasn't enough ammo left in [b.name] to fully reload [src]. It only has [src.ammo.amount_left] rounds remaining.</span>")
+					src.tooltip_rebuild = 1
+					src.logme_temp(user, src, b) // Might be useful (Convair880).
+					return
+				if(AMMO_RELOAD_FULLY)
+					user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You fully reload [src] with ammo from [b.name]. There are [b.amount_left] rounds left in [b.name].</span>")
+					src.tooltip_rebuild = 1
+					src.logme_temp(user, src, b)
+					return
+				if(AMMO_RELOAD_TYPE_SWAP)
+					switch (src.ammo.swap(b,src))
+						if(AMMO_SWAP_INCOMPATIBLE)
+							user.show_text("This ammo won't fit!", "red")
+							return
+						if(AMMO_SWAP_SOURCE_EMPTY)
+							user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You swap out the magazine. Or whatever this specific gun uses.</span>")
+						if(AMMO_SWAP_ALREADY_FULL)
+							user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You swap [src]'s ammo with [b.name]. There are [b.amount_left] rounds left in [b.name].</span>")
+					src.logme_temp(user, src, b)
+					return
 		else
 			..()
 			return
-		switch (result)
-			if(0)
-				user.show_text("You can't reload this gun.", "red")
-				return
-			if(AMMO_RELOAD_INCOMPATIBLE)
-				user.show_text("This ammo won't fit!", "red")
-				return
-			if(AMMO_RELOAD_SOURCE_EMPTY)
-				user.show_text("There's no ammo left in [item.name].", "red")
-				return
-			if(AMMO_RELOAD_ALREADY_FULL)
-				user.show_text("[src] is full!", "red")
-				return
-			if(AMMO_RELOAD_PARTIAL)
-				user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>There wasn't enough ammo left in [item.name] to fully reload [src]. It only has [src.ammo?.amount_left] rounds remaining.</span>")
-				src.tooltip_rebuild = 1
-				src.logme_temp(user, src, item) // Might be useful (Convair880).
-				return
-			if(AMMO_RELOAD_FULLY)
-				user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You fully reload [src] with ammo from [item.name]. There are [amountLeft] rounds left in [item.name].</span>")
-				src.tooltip_rebuild = 1
-				src.logme_temp(user, src, item)
-				return
-			if(AMMO_RELOAD_TYPE_SWAP)
-
-				if(istype(item, /obj/item/ammo/bullets))
-					var/obj/item/ammo/bullets/b = item
-					result = b.swap(src.ammo, src, usr)
-					amountLeft = b.amount_left
-				else if (istype(item, /obj/item/ammo/magazine))
-					var/obj/item/ammo/magazine/b = item
-					result = b.swap(src.magazine, src, usr)
-					amountLeft = b.ammo_left()
-
-				switch (result)
-					if(AMMO_SWAP_INCOMPATIBLE)
-						user.show_text("This ammo won't fit!", "red")
-						return
-					if(AMMO_SWAP_SOURCE_EMPTY)
-						user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You swap out the magazine. Or whatever this specific gun uses.</span>")
-					if(AMMO_SWAP_ALREADY_FULL)
-						user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You swap [src]'s ammo with [item.name]. There are [amountLeft] rounds left in [item.name].</span>")
-				src.logme_temp(user, src, item)
-				return
 
 	//attack_self(mob/user as mob)
 	//	return
@@ -221,14 +200,14 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				var/turf/T = get_turf(src)
 				if(T)
 					if (src.current_projectile.casing && (src.sanitycheck(1, 0) == 1))
-						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left()))
+						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo.amount_left))
 						//DEBUG_MESSAGE("Ejected [number_of_casings] casings from [src].")
 						for (var/i in 1 to number_of_casings)
 							new src.current_projectile.casing(T, src.forensic_ID)
 			else
 				if (src.casings_to_eject < 0)
 					src.casings_to_eject = 0
-				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left())
+				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo.amount_left)
 		. = ..()
 
 	shoot(var/target, var/start, var/mob/user, var/POX, var/POY)
@@ -237,14 +216,14 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				var/turf/T = get_turf(src)
 				if(T)
 					if (src.current_projectile.casing && (src.sanitycheck(1, 0) == 1))
-						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left()))
+						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo.amount_left))
 						//DEBUG_MESSAGE("Ejected [number_of_casings] casings from [src].")
 						for (var/i in 1 to number_of_casings)
 							new src.current_projectile.casing(T, src.forensic_ID)
 			else
 				if (src.casings_to_eject < 0)
 					src.casings_to_eject = 0
-				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left())
+				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo.amount_left+src)
 
 		if (fire_animation)
 			if(src.ammo?.amount_left >= 1)
@@ -256,54 +235,46 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			step(user, user.inertia_dir)
 
 	proc/eject_magazine(mob/user)
-		if (src.magazine)
-			playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
-			user.put_in_hand_or_drop(src.magazine)
-			src.magazine.UpdateIcon()
-			src.magazine = null
-			src.UpdateIcon()
-		else
-			if (src.ammo?.amount_left <= 0)
-				// The gun may have been fired; eject casings if so.
-				if ((src.casings_to_eject > 0) && src.current_projectile.casing)
-					if (src.sanitycheck(1, 0) == 0)
-						logTheThing(LOG_DEBUG, usr, "<b>Convair880</b>: [usr]'s gun ([src]) ran into the casings_to_eject cap, aborting.")
-						src.casings_to_eject = 0
-						return
-					else
-						user.show_text("You eject [src.casings_to_eject] casings from [src].", "red")
-						src.ejectcasings()
-						return
-				else
-					user.show_text("[src] is empty!", "red")
-					return
 
-			src.UpdateIcon()
-			// Make a copy here to avoid item teleportation issues.
-			var/obj/item/ammo/bullets/ammoHand = new src.ammo.type
-			ammoHand.amount_left = src.ammo?.amount_left
-			ammoHand.name = src.ammo.name
-			ammoHand.icon = src.ammo.icon
-			ammoHand.icon_state = src.ammo.icon_state
-			ammoHand.ammo_type = src.ammo.ammo_type
-			ammoHand.delete_on_reload = 1 // No duplicating empty magazines, please (Convair880).
-			ammoHand.UpdateIcon()
-			user.put_in_hand_or_drop(ammoHand)
-			ammoHand.after_unload(user)
-			playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
-
+		if (src.ammo?.amount_left <= 0)
 			// The gun may have been fired; eject casings if so.
-			src.ejectcasings()
-			src.casings_to_eject = 0
+			if ((src.casings_to_eject > 0) && src.current_projectile.casing)
+				if (src.sanitycheck(1, 0) == 0)
+					logTheThing(LOG_DEBUG, usr, "<b>Convair880</b>: [usr]'s gun ([src]) ran into the casings_to_eject cap, aborting.")
+					src.casings_to_eject = 0
+					return
+				else
+					user.show_text("You eject [src.casings_to_eject] casings from [src].", "red")
+					src.ejectcasings()
+					return
+			else
+				user.show_text("[src] is empty!", "red")
+				return
+		// Make a copy here to avoid item teleportation issues.
+		var/obj/item/ammo/bullets/ammoHand = new src.ammo.type
+		ammoHand.amount_left = src.ammo?.amount_left
+		ammoHand.name = src.ammo.name
+		ammoHand.icon = src.ammo.icon
+		ammoHand.icon_state = src.ammo.icon_state
+		ammoHand.ammo_type = src.ammo.ammo_type
+		ammoHand.delete_on_reload = 1 // No duplicating empty magazines, please (Convair880).
+		ammoHand.UpdateIcon()
+		user.put_in_hand_or_drop(ammoHand)
+		ammoHand.after_unload(user)
+		playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
 
-			src.ammo?.amount_left = 0
-			src.ammo.refillable = FALSE
-			src.UpdateIcon()
-			src.add_fingerprint(user)
-			ammoHand.add_fingerprint(user)
+		// The gun may have been fired; eject casings if so.
+		src.ejectcasings()
+		src.casings_to_eject = 0
 
-			user.visible_message("<span class='alert'>[user] unloads [src].</span>", "<span class='alert'>You unload [src].</span>")
-			//DEBUG_MESSAGE("Unloaded [src]'s ammo manually.")
+		src.ammo?.amount_left = 0
+		src.ammo.refillable = FALSE
+		src.UpdateIcon()
+		src.add_fingerprint(user)
+		ammoHand.add_fingerprint(user)
+
+		user.visible_message("<span class='alert'>[user] unloads [src].</span>", "<span class='alert'>You unload [src].</span>")
+		//DEBUG_MESSAGE("Unloaded [src]'s ammo manually.")
 		return
 
 	proc/ejectcasings()
@@ -695,13 +666,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	muzzle_flash = null
 	has_empty_state = 1
 	fire_animation = TRUE
-	default_ammo = /obj/item/ammo/bullets/bullet_22HP
-	default_magazine = /obj/item/ammo/magazine/bullet_22
+	default_magazine = /obj/item/ammo/bullets/bullet_22HP
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_22, /obj/item/ammo/bullets/bullet_22HP)
 	ammobag_restock_cost = 1
 
 	New()
-		magazine = new default_magazine
+		ammo = new default_magazine
 		set_current_projectile(new/datum/projectile/bullet/bullet_22/HP)
 		..()
 
@@ -1941,13 +1911,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	auto_eject = 1
 	has_empty_state = 1
 	fire_animation = TRUE
-	can_hold_magazine = TRUE
-	default_magazine = /obj/item/ammo/magazine/bullet_9mm
+	default_magazine = /obj/item/ammo/bullets/bullet_9mm
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_9mm)
 	ammobag_restock_cost = 1
 
 	New()
-		magazine = new default_magazine
+		ammo = new default_magazine
 		set_current_projectile(new/datum/projectile/bullet/bullet_9mm)
 		..()
 
@@ -1987,12 +1956,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_SMG
 	contraband = 4
 	ammo_cats = list(AMMO_SMG_9MM)
-	max_ammo_capacity = 1
+	max_ammo_capacity = 30
 	auto_eject = 1
 	spread_angle = 10
 	has_empty_state = 1
-	can_hold_magazine = TRUE
-	has_magless_state = TRUE
 	default_magazine = /obj/item/ammo/bullets/bullet_9mm/smg
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_9mm/smg)
 	ammobag_restock_cost = 2

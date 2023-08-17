@@ -182,7 +182,7 @@ ABSTRACT_TYPE(/obj/deployable_turret)
 
 	proc/set_projectile()
 		current_projectile = new projectile_type
-		current_projectile.default_firemode = new/datum/firemode()
+		current_projectile.firemode = new/datum/firemode()
 		current_projectile.firemode.shot_number = burst_size
 		current_projectile.firemode.shoot_delay = 10/fire_rate
 

@@ -19,7 +19,7 @@
 	inventory_counter_enabled = 1
 
 	proc
-		swap(var/obj/item/ammo/A, var/mob/usr)
+		swap(var/obj/item/ammo/A)
 			return
 
 		use(var/amt = 0)
@@ -41,7 +41,6 @@
 	// 1.58 - RPG-7 (Tube is 40mm too, though warheads are usually larger in diameter.)
 
 
-// Loose ammunition. see /obj/item/ammo/bullets/magazine for permanent entities
 /obj/item/ammo/bullets
 	name = "Ammo box"
 	sname = "Bullets"
@@ -51,11 +50,10 @@
 	m_amt = 40000
 	g_amt = 0
 	var/amount_left = 0
-	//how much a single slot of inventory should hold
 	var/max_amount = 1000
 	var/unusualCell
 	/// TRUE if this ammo can be refilled from an ammo bag. Used to prevent duping
-	var/refillable = FALSE
+	var/refillable = TRUE
 	ammo_type = new/datum/projectile/bullet
 
 	var/ammo_cat = null
@@ -117,7 +115,7 @@
 				return // Full reload or ammo left over.
 		else return ..()
 
-	swap(var/obj/item/ammo/bullets/A, var/obj/item/gun/kinetic/K, var/mob/usr)
+	swap(var/obj/item/ammo/bullets/A, var/obj/item/gun/kinetic/K)
 		// I tweaked this for improved user feedback and to support zip guns (Convair880).
 		var/check = 0
 		if (!A || !K)
@@ -149,12 +147,11 @@
 			usr.put_in_hand_or_drop(ammoDrop)
 			ammoDrop.after_unload(usr)
 			K.ammo.amount_left = 0 // Make room for the new ammo.
-			A.loadammo(K) // Let the other proc do the work for us.
+			K.ammo.loadammo(A, K) // Let the other proc do the work for us.
 			//DEBUG_MESSAGE("Swapped [K]'s ammo with [A.type]. There are [A.amount_left] round left over.")
 			return 2
 
 		else
-			boutput(world, "swapping")
 			usr.u_equip(A) // We need a free hand for ammoHand first.
 
 			// Some ammo boxes have dynamic icon/desc updates we can't get otherwise.
@@ -169,7 +166,6 @@
 			usr.put_in_hand_or_drop(ammoHand)
 			ammoHand.after_unload(usr)
 
-			boutput(world, "swapped")
 			var/obj/item/ammo/bullets/ammoGun = new A.type // Ditto.
 			ammoGun.amount_left = A.amount_left
 			ammoGun.name = A.name
@@ -177,13 +173,11 @@
 			ammoGun.icon_state = A.icon_state
 			ammoGun.ammo_type = A.ammo_type
 			//DEBUG_MESSAGE("Swapped [K]'s ammo with [A.type].")
-			boutput(world, "swapped>??")
 			qdel(K.ammo) // Make room for the new ammo.
 			qdel(A) // We don't need you anymore.
 			ammoGun.set_loc(K)
 			K.ammo = ammoGun
 			K.set_current_projectile(ammoGun.ammo_type)
-			boutput(world, "swapped!!!")
 			if(K.silenced)
 				K.current_projectile.shot_sound = 'sound/weapons/suppressed_22.ogg'
 				K.current_projectile.shot_sound_extrarange = -10
@@ -191,14 +185,14 @@
 
 			return 1
 
-	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr)
+	proc/loadammo(var/obj/item/ammo/bullets/A, var/obj/item/gun/kinetic/K)
 		// Also see attackby() in kinetic.dm.
-		if (!K)
+		if (!A || !K)
 			return 0 // Error message.
 		if (K.sanitycheck() == 0)
 			return 0
 		var/check = 0
-		if (ammo_cat in K.ammo_cats)
+		if (A.ammo_cat in K.ammo_cats)
 			check = 1
 		else if (K.ammo_cats == null) //someone forgot to set ammo cats. scream
 			check = 1
@@ -206,7 +200,7 @@
 			return AMMO_RELOAD_INCOMPATIBLE
 
 		K.add_fingerprint(usr)
-		src.add_fingerprint(usr)
+		A.add_fingerprint(usr)
 		if(K.sound_load_override)
 			playsound(K, K.sound_load_override, 50, 1)
 		else
@@ -214,13 +208,13 @@
 
 		if (K.ammo.amount_left < 0)
 			K.ammo.amount_left = 0
-		if (src.amount_left < 1)
+		if (A.amount_left < 1)
 			return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty.
 		if (K.ammo.amount_left >= K.max_ammo_capacity)
-			if (K.ammo.ammo_type.type != src.ammo_type.type)
+			if (K.ammo.ammo_type.type != A.ammo_type.type)
 				return AMMO_RELOAD_TYPE_SWAP // Call swap().
 			return AMMO_RELOAD_ALREADY_FULL // Gun's full.
-		if (K.ammo.amount_left > 0 && K.ammo.ammo_type.type != src.ammo_type.type)
+		if (K.ammo.amount_left > 0 && K.ammo.ammo_type.type != A.ammo_type.type)
 			return AMMO_RELOAD_TYPE_SWAP // Call swap().
 
 		else
@@ -229,41 +223,41 @@
 			K.ejectcasings()
 
 			// Required for swap() to work properly (Convair880).
-			if (K.ammo.type != src.type || src.force_new_current_projectile)
-				var/obj/item/ammo/bullets/ammoGun = new src.type
+			if (K.ammo.type != A.type || A.force_new_current_projectile)
+				var/obj/item/ammo/bullets/ammoGun = new A.type
 				ammoGun.amount_left = K.ammo.amount_left
 				ammoGun.ammo_type = K.ammo.ammo_type
 				qdel(K.ammo)
 				ammoGun.set_loc(K)
 				K.ammo = ammoGun
-				K.set_current_projectile(src.ammo_type)
+				K.set_current_projectile(A.ammo_type)
 				if(K.silenced)
 					K.current_projectile.shot_sound = 'sound/weapons/suppressed_22.ogg'
 					K.current_projectile.shot_sound_extrarange = -10
 
-				//DEBUG_MESSAGE("Equalized [K]'s ammo type to [src.type]")
+				//DEBUG_MESSAGE("Equalized [K]'s ammo type to [A.type]")
 
-			var/move_amount = min(src.amount_left, K.max_ammo_capacity - K.ammo.amount_left)
-			src.amount_left -= move_amount
+			var/move_amount = min(A.amount_left, K.max_ammo_capacity - K.ammo.amount_left)
+			A.amount_left -= move_amount
 			K.ammo.amount_left += move_amount
-			K.ammo.ammo_type = src.ammo_type
+			K.ammo.ammo_type = A.ammo_type
 
-			if ((src.amount_left < 1) && (K.ammo.amount_left < K.max_ammo_capacity))
-				src.UpdateIcon()
+			if ((A.amount_left < 1) && (K.ammo.amount_left < K.max_ammo_capacity))
+				A.UpdateIcon()
 				K.UpdateIcon()
 				K.ammo.UpdateIcon()
-				if (src.delete_on_reload)
+				if (A.delete_on_reload)
 					//DEBUG_MESSAGE("[K]: [src.type] (now empty) was deleted on partial reload.")
-					qdel(src) // No duplicating empty magazines, please (Convair880).
+					qdel(A) // No duplicating empty magazines, please (Convair880).
 				return AMMO_RELOAD_PARTIAL // Couldn't fully reload the gun.
 			if ((src.amount_left >= 0) && (K.ammo.amount_left == K.max_ammo_capacity))
 				src.UpdateIcon()
 				K.UpdateIcon()
 				K.ammo.UpdateIcon()
-				if (src.amount_left == 0)
-					if (src.delete_on_reload)
+				if (A.amount_left == 0)
+					if (A.delete_on_reload)
 						//DEBUG_MESSAGE("[K]: [src.type] (now empty) was deleted on full reload.")
-						qdel(src) // No duplicating empty magazines, please (Convair880).
+						qdel(A) // No duplicating empty magazines, please (Convair880).
 				return AMMO_RELOAD_FULLY // Full reload or ammo left over.
 
 	update_icon()
@@ -519,27 +513,18 @@
 	max_amount = 15
 	ammo_type = new/datum/projectile/bullet/bullet_9mm
 	ammo_cat = AMMO_PISTOL_9MM
-	delete_on_reload = TRUE
 
 	five_shots
 		amount_left = 5
 
 	smg
-		name = "9mm SMG ammo"
-		desc = "9mm ammunition for a submachine gun."
-		icon_state = "9mm-loose"
+		name = "9mm SMG magazine"
+		desc = "An extended 9mm magazine for a sub machine gun."
+		icon_state = "smg_magazine"
 		amount_left = 30
 		max_amount = 30
 		ammo_cat = AMMO_SMG_9MM
 		ammo_type = new/datum/projectile/bullet/bullet_9mm/smg
-
-		incendiary
-			name = "9mm SMG Tracer ammo"
-			desc = "9mm tracer ammunition for a submachine gun."
-			icon_state = "9mm-loose-inc"
-			ammo_cat = AMMO_SMG_9MM
-			ammo_type = new/datum/projectile/bullet/bullet_9mm/smg/incendiary
-
 
 /obj/item/ammo/bullets/nine_mm_NATO
 	sname = "9mm frangible"
