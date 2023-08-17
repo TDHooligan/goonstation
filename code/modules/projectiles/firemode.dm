@@ -46,9 +46,7 @@ datum/firemode
 	flamethrower
 		auto
 			shot_number = 2
-			shoot_delay = 2 DECI SECONDS
 		burst
 			shot_number = 4
-			shoot_delay = 1 SECOND
 		backtank
-			shoot_delay = 2 DECI SECONDS
+			shot_number = 1

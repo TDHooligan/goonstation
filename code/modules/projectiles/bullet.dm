@@ -313,17 +313,6 @@ toxic - poisons
 		cost = 3
 		default_firemode = /datum/firemode/three_burst
 
-		incendiary
-			icon_state = "flare"
-			on_hit(atom/hit, direction, obj/projectile/P)
-				if (isliving(hit))
-					fireflash(get_turf(hit), 0)
-					hit.changeStatus("staggered", clamp(P.power/8, 5, 1) SECONDS)
-				else if (isturf(hit))
-					fireflash(hit, 0)
-				else
-					fireflash(get_turf(hit), 0)
-
 
 /datum/projectile/bullet/nine_mm_NATO
 	name = "bullet"
