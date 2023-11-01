@@ -8,6 +8,9 @@
 	var/loaded_ammo = /obj/item/ammo/bullets/bullet_9mm
 	var/obj/item/ammo/bullets/ammo
 	var/sound_load = 'sound/weapons/gunload_light.ogg'
+	var/icon_dynamic = 0 // For dynamic desc and/or icon updates (Convair880).
+	var/icon_short = null // If dynamic = 1, the short icon_state has to be specified as well.
+	var/icon_empty = null
 	name = "magazine"
 
 
@@ -33,12 +36,21 @@
 		..()
 
 
-
 	update_icon()
 		if (src.ammo)
 			inventory_counter?.update_number(src.ammo?.amount_left)
 		else
 			inventory_counter?.update_text("-")
+		src.tooltip_rebuild = 1
+		if (src.ammo?.amount_left > 0)
+			if (src.icon_dynamic && src.icon_short)
+				src.icon_state = text("[src.icon_short]-[src.ammo?.amount_left]")
+			else if(src.icon_empty)
+				src.icon_state = initial(src.icon_state)
+		else
+			if (src.icon_empty)
+				src.icon_state = src.icon_empty
+		return
 
 	proc/get_ammo_type()
 		return ammo.ammo_type
@@ -75,7 +87,10 @@
 
 	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr)
 		if (auto_load)
-			return ammo.loadammo(K,usr)
+			//weirdness loading mostly-loaded revolvers with partial ammo
+			var/result = ammo.loadammo(K,usr)
+			UpdateIcon()
+			return result
 		// Also see attackby() in kinetic.dm.
 		if (!K)
 			return 0 // Error message.
@@ -115,6 +130,19 @@
 				src.ammo.attackby(b,user)
 				UpdateIcon()
 				return
+
+	speedloader
+		bullet_357
+			auto_load = TRUE
+			icon_short = "38"
+			icon_empty = "speedloader_empty"
+			name = ".357 speedloader"
+			desc = "A speedloader for .357 ammunition."
+			icon_state = "38-7"
+			start_amount = 7
+			max_amount = 7
+			icon_dynamic = 1
+			loaded_ammo = /obj/item/ammo/bullets/a38
 
 
 	smg

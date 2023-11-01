@@ -4,10 +4,33 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	icon = 'icons/obj/items/gun.dmi'
 	item_state = "gun"
 	m_amt = 2000
-	var/obj/item/ammo/bullets/ammo = null
-	/// How much ammo can this gun hold internally? IE, number of barrels/tube length.
-	/// set 0 to be 'open-bolt' IE, no slotting bullets directly into the chamber
+
+	/// This toggles, essentially, 'arcade mode' versus 'realistic firearms' for magazine weapons.
+	/// If set to 'TRUE', magazine based firearms will pull bullets from magazines, into the gun.
+	/// This allows for cute 'tactical' behaviours, like reloading early to have +1 bullet in the gun.
+	/// Or 'fake unloading', by removing the magazine, but leaving 1 in the chamber.
+	///
+	/// If set to 'FALSE', magazine based firearms will simply shoot bullets directly from the magazine.
+	/// If, for some weird reason, a player has access to loose bullets,
+	/// they will only be able to reload the loose magazine.
+	var/mag_weapon_chambering = USE_WEAPON_REALISM
+
+	/// This determines whether a magazine-fed weapon can accept bullets into the magazine directly.
+	/// This is only useful if the gun has a detachable magazine and, for some reason, players also have loose bullets/speedloaders
+	/// if FANCY_CHAMBERING is on, bullets will first be loaded into the chamber, then the magazine.
+	var/top_loading = FALSE
+
+	/// How many loose bullets can this gun hold internally? IE, number of barrels/tube length/open vs closed bolt
+	/// A double barrel shotgun would, for example, have an internal ammo capacity of 2.
+	/// A weapon with a non-detachable mag, like the riot shotgun or revolver, would have 6+.
+	/// A closed-bolt firearm with a detachable magazine like a M16/AK would have 1
+	/// An open bolt firearm with a detachable magazine like a grease gun/Mac10 would have 0
+	///
 	var/internal_ammo_capacity = 1
+
+
+	var/obj/item/ammo/bullets/ammo = null
+	/// What kind of magazine does this gun hold?
 	var/obj/item/ammo/magazine/magazine = null
 	/// Can this gun use detachable magazines?
 	var/can_hold_magazine = FALSE
