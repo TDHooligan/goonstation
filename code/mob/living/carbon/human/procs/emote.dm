@@ -981,7 +981,7 @@
 						message = "<B>[src]</B> racks an imaginary shotgun."
 						maptext_out = "<I>racks an imaginary shotgun</I>"
 					else
-						if (firearm.rack_emote(src))
+						if (firearm.rack_slide(src))
 							message = "<B>[src]</B> racks \the [firearm]."
 							maptext_out = "<I>racks \the [firearm]</I>"
 				else

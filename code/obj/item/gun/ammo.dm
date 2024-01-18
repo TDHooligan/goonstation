@@ -41,7 +41,7 @@
 	// 1.58 - RPG-7 (Tube is 40mm too, though warheads are usually larger in diameter.)
 
 
-// Loose ammunition. see /obj/item/ammo/bullets/magazine for permanent entities
+// Loose ammunition. see /obj/item/ammo/bullets/magazine for magazines/speedloaders
 /obj/item/ammo/bullets
 	name = "Ammo box"
 	sname = "Bullets"
@@ -51,7 +51,7 @@
 	m_amt = 40000
 	g_amt = 0
 	var/amount_left = 0
-	//how much a single slot of inventory should hold
+	//how many loose bullets you can hold in 1 pile
 	var/max_amount = 1000
 	var/unusualCell
 	/// TRUE if this ammo can be refilled from an ammo bag. Used to prevent duping
@@ -85,58 +85,63 @@
 			src.UpdateIcon()
 			return 0
 
+	proc/add_ammo(obj/item/ammo/bullets/otherAmmo, mob/user, magazineCap)
+		if(!otherAmmo.type == src.type)
+			return
+		var/obj/item/ammo/bullets/A = otherAmmo
+		if(A.amount_left<1 )
+			user?.show_text("There's no ammo left in [A.name].", "red")
+			return
+		var/limit = magazineCap ? magazineCap : src.max_amount
+		if(src.amount_left>=limit)
+			user?.show_text("[src] is full!", "red")
+			return
+
+		while ((A.amount_left > 0) && (src.amount_left < limit))
+			A.amount_left--
+			src.amount_left++
+		if ((A.amount_left < 1) && (src.amount_left < limit))
+			A.UpdateIcon()
+			src.UpdateIcon()
+			if (A.delete_on_reload)
+				qdel(A) // No duplicating empty magazines, please (Convair880).
+			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining.</span>")
+			return // Couldn't fully reload the gun.
+		if ((A.amount_left >= 0) && (src.amount_left == limit))
+			A.UpdateIcon()
+			src.UpdateIcon()
+			if (A.amount_left == 0)
+				if (A.delete_on_reload)
+					qdel(A) // No duplicating empty magazines, please (Convair880).
+			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name].</span>")
+			return // Full reload or ammo left over.
+
 	attackby(obj/b, mob/user)
 		if(istype(b, /obj/item/gun/kinetic) && b:allowReverseReload)
 			b.Attackby(src, user)
 		else if(b.type == src.type)
-			var/obj/item/ammo/bullets/A = b
-			if(A.amount_left<1)
-				user.show_text("There's no ammo left in [A.name].", "red")
-				return
-			if(src.amount_left>=src.max_amount)
-				user.show_text("[src] is full!", "red")
-				return
-
-			while ((A.amount_left > 0) && (src.amount_left < src.max_amount))
-				A.amount_left--
-				src.amount_left++
-			if ((A.amount_left < 1) && (src.amount_left < src.max_amount))
-				A.UpdateIcon()
-				src.UpdateIcon()
-				if (A.delete_on_reload)
-					qdel(A) // No duplicating empty magazines, please (Convair880).
-				user.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining.</span>")
-				return // Couldn't fully reload the gun.
-			if ((A.amount_left >= 0) && (src.amount_left == src.max_amount))
-				A.UpdateIcon()
-				src.UpdateIcon()
-				if (A.amount_left == 0)
-					if (A.delete_on_reload)
-						qdel(A) // No duplicating empty magazines, please (Convair880).
-				user.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name].</span>")
-				return // Full reload or ammo left over.
+			add_ammo(b, user)
 		else return ..()
 
-	swap(var/obj/item/ammo/bullets/A, var/obj/item/gun/kinetic/K, var/mob/usr)
+	swap(var/obj/item/ammo/bullets/newBullets, var/obj/item/gun/kinetic/K, var/mob/usr)
 		// I tweaked this for improved user feedback and to support zip guns (Convair880).
 		var/check = 0
-		if (!A || !K)
+		if (!newBullets || !K)
 			check = 0
 		if (K.sanitycheck() == 0)
 			check = 0
-		if (A.ammo_cat in K.ammo_cats)
+		if (newBullets.ammo_cat in K.ammo_cats)
 			check = 1
 		else if (K.ammo_cats == null) //someone forgot to set ammo cats. scream
 			check = 1
 		if (!check)
-			return 0
-			//DEBUG_MESSAGE("Couldn't swap [K]'s ammo ([K.ammo.type]) with [A.type].")
+			return AMMO_SWAP_INCOMPATIBLE
 
 		// The gun may have been fired; eject casings if so.
 		K.ejectcasings()
 
-		// We can't delete A here, because there's going to be ammo left over.
-		if (K.internal_ammo_capacity < A.amount_left)
+		// We can't delete newBullets here, because there's going to be ammo left over.
+		if (K.internal_ammo_capacity < newBullets.amount_left)
 			// Some ammo boxes have dynamic icon/desc updates we can't get otherwise.
 			var/obj/item/ammo/bullets/ammoDrop = new K.ammo.type
 			ammoDrop.amount_left = K.ammo.amount_left
@@ -149,13 +154,13 @@
 			usr.put_in_hand_or_drop(ammoDrop)
 			ammoDrop.after_unload(usr)
 			K.ammo.amount_left = 0 // Make room for the new ammo.
-			A.loadammo(K) // Let the other proc do the work for us.
-			//DEBUG_MESSAGE("Swapped [K]'s ammo with [A.type]. There are [A.amount_left] round left over.")
-			return 2
+			newBullets.loadammo(K) // Let the other proc do the work for us.
+			//DEBUG_MESSAGE("Swapped [K]'s ammo with [newBullets.type]. There are [newBullets.amount_left] round left over.")
+			return AMMO_SWAP_ALREADY_FULL
 
 		else
 			boutput(world, "swapping")
-			usr.u_equip(A) // We need a free hand for ammoHand first.
+			usr.u_equip(newBullets) // We need a free hand for ammoHand first.
 
 			// Some ammo boxes have dynamic icon/desc updates we can't get otherwise.
 			var/obj/item/ammo/bullets/ammoHand = new K.ammo.type
@@ -170,16 +175,16 @@
 			ammoHand.after_unload(usr)
 
 			boutput(world, "swapped")
-			var/obj/item/ammo/bullets/ammoGun = new A.type // Ditto.
-			ammoGun.amount_left = A.amount_left
-			ammoGun.name = A.name
-			ammoGun.icon = A.icon
-			ammoGun.icon_state = A.icon_state
-			ammoGun.ammo_type = A.ammo_type
-			//DEBUG_MESSAGE("Swapped [K]'s ammo with [A.type].")
+			var/obj/item/ammo/bullets/ammoGun = new newBullets.type // Ditto.
+			ammoGun.amount_left = newBullets.amount_left
+			ammoGun.name = newBullets.name
+			ammoGun.icon = newBullets.icon
+			ammoGun.icon_state = newBullets.icon_state
+			ammoGun.ammo_type = newBullets.ammo_type
+			//DEBUG_MESSAGE("Swapped [K]'s ammo with [newBullets.type].")
 			boutput(world, "swapped>??")
 			qdel(K.ammo) // Make room for the new ammo.
-			qdel(A) // We don't need you anymore.
+			qdel(newBullets) // We don't need you anymore.
 			ammoGun.set_loc(K)
 			K.ammo = ammoGun
 			K.set_current_projectile(ammoGun.ammo_type)
@@ -189,7 +194,7 @@
 				K.current_projectile.shot_sound_extrarange = -10
 			K.UpdateIcon()
 
-			return 1
+			return
 
 	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr)
 		// Also see attackby() in kinetic.dm.
@@ -212,21 +217,26 @@
 		else
 			playsound(K, sound_load, 50, 1)
 
-		if (K.ammo.amount_left < 0)
+		if (K.ammo?.amount_left < 0)
 			K.ammo.amount_left = 0
 		if (src.amount_left < 1)
 			return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty.
-		if (K.ammo.amount_left >= K.internal_ammo_capacity)
-			if (K.ammo.ammo_type.type != src.ammo_type.type)
+		if (K.ammo?.amount_left >= K.internal_ammo_capacity)
+			if (K.ammo?.ammo_type.type != src.ammo_type.type)
 				return AMMO_RELOAD_TYPE_SWAP // Call swap().
 			return AMMO_RELOAD_ALREADY_FULL // Gun's full.
-		if (K.ammo.amount_left > 0 && K.ammo.ammo_type.type != src.ammo_type.type)
+		if (K.ammo?.amount_left > 0 && K.ammo.ammo_type.type != src.ammo_type.type)
 			return AMMO_RELOAD_TYPE_SWAP // Call swap().
 
 		else
 
 			// The gun may have been fired; eject casings if so (Convair880).
 			K.ejectcasings()
+
+			// If the gun has no ammo item, give it a copy of this one
+			if (!K.ammo)
+				K.ammo = new src.type(K)
+				K.ammo.amount_left = 0
 
 			// Required for swap() to work properly (Convair880).
 			if (K.ammo.type != src.type || src.force_new_current_projectile)

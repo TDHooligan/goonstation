@@ -6,6 +6,7 @@
 	var/start_amount = 0
 	var/max_amount = 1000
 	var/loaded_ammo = /obj/item/ammo/bullets/bullet_9mm
+	var/supported_ammo
 	var/obj/item/ammo/bullets/ammo
 	var/sound_load = 'sound/weapons/gunload_light.ogg'
 	var/icon_dynamic = 0 // For dynamic desc and/or icon updates (Convair880).
@@ -14,11 +15,10 @@
 	name = "magazine"
 
 
-	// Can you use this like a handful of bullets?
+	/// Can you feed this directly into magazine-less weapons? For example, a speedloader
 	var/auto_load = FALSE
-
-	// Are you blocked from removing bullets from this magazine?
-	// You might want to toggle this to 'true' if you don't want nukies emptying contents into their pockets & refilling mags.
+	/// Are you blocked from removing bullets from this magazine?
+	/// You might want to toggle this to 'true' if you don't want nukies emptying contents into their pockets & refilling mags.
 	var/locked = FALSE
 	attack_hand(mob/user)
 		if (!user)
@@ -52,6 +52,20 @@
 				src.icon_state = src.icon_empty
 		return
 
+	proc/add_ammo(obj/item/ammo/bullets/otherAmmo, mob/user)
+		if (src.ammo && src.ammo.type == otherAmmo.type)
+			var/result = src.ammo.add_ammo(otherAmmo, user)
+			UpdateIcon()
+			return result
+		else
+			src.ammo = new otherAmmo.type()
+			var/amt = min(max_amount,otherAmmo.amount_left)
+			src.ammo.amount_left = amt
+			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You swap the ammo loaded in [src]. It has [src.ammo.amount_left] rounds remaining.</span>")
+			otherAmmo.use(amt)
+			UpdateIcon()
+
+
 	proc/get_ammo_type()
 		return ammo.ammo_type
 
@@ -76,13 +90,17 @@
 
 
 
-	swap(var/obj/item/ammo/magazine/mag2, var/obj/item/gun/kinetic/K)
-		usr.u_equip(src)
-		usr.put_in_hand_or_drop(mag2)
-		src.set_loc(K)
-		K.magazine = src
+	swap(var/obj/item/ammo/magazine/newMag, var/obj/item/gun/kinetic/K)
+		//attempt to implicitly chamber a round for tactical reloading without using *rack
+		if (newMag.ammo.type == ammo.type)
+			K.pull_ammo()
+		usr.u_equip(newMag)
+		usr.put_in_hand_or_drop(src)
+		newMag.set_loc(K)
+		K.magazine = newMag
 		K.UpdateIcon()
-		mag2.UpdateIcon()
+		src.UpdateIcon()
+		newMag.UpdateIcon()
 		..()
 
 	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr)
@@ -96,7 +114,7 @@
 			return 0 // Error message.
 		if (K.sanitycheck() == 0)
 			return 0
-		if (!K.can_hold_magazine)
+		if (!K.can_swap_magazine)
 			return AMMO_RELOAD_INCOMPATIBLE
 		var/check = 0
 		if (ammo.ammo_cat in K.ammo_cats)
@@ -114,15 +132,23 @@
 			playsound(K, sound_load, 50, 1)
 
 		if (ammo_left() < 1)
-			return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty.
+			if (K.magazine)
+				return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty and there's a mag loaded. no point swapping.
+			else
+				K.magazine = src
+				usr.u_equip(src)
+				src.set_loc(K)
+				K.UpdateIcon()
+				return AMMO_RELOAD_EMPTY_MAG
 		if (K.magazine)
 			return AMMO_RELOAD_TYPE_SWAP // Call swap().
 		else
 			K.magazine = src
 			usr.u_equip(src)
 			src.set_loc(K)
-			K.update_icon()
+			K.UpdateIcon()
 			return AMMO_RELOAD_FULLY // Full reload or ammo left over.
+
 
 	attackby(obj/b, mob/user)
 		if(istype(b, /obj/item/ammo/bullets))
