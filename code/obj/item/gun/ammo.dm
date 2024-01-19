@@ -51,7 +51,7 @@
 	m_amt = 40000
 	g_amt = 0
 	var/amount_left = 0
-	//how many loose bullets you can hold in 1 pile
+	//how many loose bullets you can hold in 1 slot
 	var/max_amount = 1000
 	var/unusualCell
 	/// TRUE if this ammo can be refilled from an ammo bag. Used to prevent duping
@@ -196,7 +196,7 @@
 
 			return
 
-	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr)
+	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr, defer_swap = FALSE)
 		// Also see attackby() in kinetic.dm.
 		if (!K)
 			return 0 // Error message.
@@ -221,13 +221,14 @@
 			K.ammo.amount_left = 0
 		if (src.amount_left < 1)
 			return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty.
+		if (K.ammo?.amount_left > 0 && defer_swap)
+			return AMMO_RELOAD_ALREADY_FULL
 		if (K.ammo?.amount_left >= K.internal_ammo_capacity)
 			if (K.ammo?.ammo_type.type != src.ammo_type.type)
 				return AMMO_RELOAD_TYPE_SWAP // Call swap().
 			return AMMO_RELOAD_ALREADY_FULL // Gun's full.
 		if (K.ammo?.amount_left > 0 && K.ammo.ammo_type.type != src.ammo_type.type)
 			return AMMO_RELOAD_TYPE_SWAP // Call swap().
-
 		else
 
 			// The gun may have been fired; eject casings if so (Convair880).

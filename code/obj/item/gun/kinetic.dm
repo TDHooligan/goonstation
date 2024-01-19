@@ -7,21 +7,22 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 	/// How many loose bullets can this gun hold without a magazine?
 	var/internal_ammo_capacity = 1
-
-
 	/// The bullets loaded in this gun
 	var/obj/item/ammo/bullets/ammo = null
-	/// What kind of magazine does this gun hold?
+	/// The magazine loaded in this gun
 	var/obj/item/ammo/magazine/magazine = null
-	/// Can this gun swap magazines?
+	/// If specified, only subclasses of these magazine will be accepted. Otherwise, any magazines of the right calibre will fit.
+	/// you could, for example, cram a 30 round 9mm SMG magazine into a glock!
+	var/supported_magazine_types = []
+	/// Can this gun have its magazine removed/replaced. If this has no magazine, leave false
 	var/can_swap_magazine = FALSE
 	/// Has this gun got a magless sprite?
 	var/has_magless_state = FALSE
 	/// Can this gun shoot less than a full burst?
 	var/can_shoot_partially = TRUE
-	/// Can be a list too. The .357 Mag revolver can also chamber .38 Spc rounds, for instance (Convair880).
+	/// What ammo cats does this accept? Can be a list too. The .357 Mag revolver can also chamber .38 Spc rounds, for instance (Convair880).
 	var/ammo_cats = null
-	/// Does this gun have a special icon state for having no ammo lefT?
+	/// Does this gun have a special icon state for having no ammo left?
 	var/has_empty_state = FALSE
 	/// Does this gun have a special icon state it should flick to when fired?
 	var/has_fire_anim_state = FALSE
@@ -47,9 +48,9 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	/// Does this gun have a special sound it makes when loading instead of the assigned ammo sound?
 	var/sound_load_override = null
 
-	/// not great, but this code lets us handle ammo types changing mid-burst without completely rewiring ammo cost mechanics
-	var/datum/projectile/internal_bullet_type = null
-	var/internal_bullets_to_fire = 0
+
+	/// When a gun fires multiple projectiles, they're queued here temporarily in case any differ.
+	var/list/datum/projectile/bullet_queue = list()
 
 	// GUN BEHAVIOR DEFINES
 
@@ -136,11 +137,13 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		return 0
 
 	alter_projectile(var/obj/projectile/P)
-		if (internal_bullets_to_fire > 0)
-			P.proj_data = internal_bullet_type
-			internal_bullets_to_fire = internal_bullets_to_fire - 1
+		if (length(bullet_queue) > 0)
+			P.proj_data = bullet_queue[1]
+			bullet_queue -= bullet_queue[1]
 		return
 
+	/// This is how you choose firemode, instead of ammo types.
+	/// Ammotypes still have a default_firemode that this should override if it cares.
 	alter_firemode(var/datum/firemode/F)
 		F.shot_number = 25
 		return
@@ -183,7 +186,8 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				magazine.use(to_transfer)
 				ammo.amount_left += to_transfer
 			else
-				if (!src.ammo || src.ammo.amount_left <= 0) // mixed ammo chambering is a no no for now
+				// mixed ammo chambering is a no no for now. so only pull new ammo objects if we're empty
+				if (!src.ammo || src.ammo.amount_left <= 0)
 					src.ammo = magazine.pull_ammo(internal_ammo_capacity) || src.ammo
 
 	/// For semi-autos. ejects chambered cartridges to the floor, then loads from the magazine.
@@ -198,7 +202,9 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			return success
 		return FALSE
 
-	proc/use_ammo(var/quantity)
+	/// Use <cost> ammo, <shots> times. This queues different projectiles if multiple ammo types are fired.
+	/// Returns the number of shots fired
+	proc/use_ammo(var/cost, var/shots=1)
 		var/ammoLeft = src.ammo?.amount_left
 		if (!src.ammo)
 			if (!magazine)
@@ -207,34 +213,39 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				// implicitly rack ammo if the gun's empty but has a magazine attached
 				pull_ammo(internal_ammo_capacity)
 			else
-				// if some cruel person wants to rub Realism in some nerd's face, don't.
+				// if some cruel person wants to rub Realism in some nerd's face, fail instead.
 				return 0
 
-		// feed from the magazine first, if feasible
+		// feed from the magazine first, if feasible, to save creating more ammo objects
 		if (src.magazine)
-			var/success
-			//if the magazine has the same ammo as the chamber, just pull straight from the mag to save creating new ammo objects
-			boutput(world, "is [magazine.get_ammo_type()] == [ammo.ammo_type]")
-			if (magazine.ammo_left() >= quantity && magazine.get_ammo_type() == ammo.ammo_type)
-				boutput(world,"we're using magazine directly")
-				success = magazine.use(quantity)
-				var/ammo_required = min(magazine.ammo_left(), internal_ammo_capacity)
-				if (ammo_required > 0 && magazine.use(ammo_required))
-					src.ammo.amount_left = src.ammo.amount_left + ammo_required
-			else
-				//otherwise, use the ammo in the chamber first
-				success = (ammo.use(ammoLeft) && magazine.use(quantity - ammoLeft))
-				boutput(world,"we're getting a NEW ammo object, hue")
-				set_current_projectile(magazine.get_ammo_type())
-				internal_bullet_type = src.ammo.ammo_type
-				internal_bullets_to_fire = ammoLeft
-				//...then reload the chamber
-				if (src.ammo.amount_left < internal_ammo_capacity && magazine.ammo_left() > 0)
+			var/successes = 0
+			for (var/i in 1 to shots)
+				if (ammo.use(cost)) // attempt to shoot what's loaded in the chamber
+					if (shots > 1)
+						bullet_queue += src.ammo.ammo_type
+					else // ensure we're shooting the right bullet if we just had to shoot from the magazine
+						set_current_projectile(src.ammo.ammo_type)
+					successes++
+				else
+					var/datum/projectile = magazine.get_ammo_type()
+					if(magazine.use(cost))
+						if (shots > 1)
+							bullet_queue += projectile
+						else //if the chamber's empty, we'll need to tell the gun to shoot what's loaded here
+							set_current_projectile(projectile)
+						successes++
+			//...then reload the chamber(s)
+			if (src.ammo.amount_left < internal_ammo_capacity && magazine.ammo_left() > 0)
+				if (magazine.get_ammo_type() == ammo.type)
+					while (magazine.get_ammo_type() == ammo.type && magazine.ammo_left() > 0 && src.ammo.amount_left < internal_ammo_capacity)
+						if (magazine.use(1))
+							src.ammo.amount_left++
+				else
 					src.ammo = magazine.pull_ammo(internal_ammo_capacity) || src.ammo
-			return success
+			return successes
 		else
-			if (ammoLeft >= quantity)
-				return ammo.use(quantity)
+			if (ammoLeft >= cost)
+				return ammo.use(cost)
 
 
 		return 0
@@ -256,8 +267,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	process_ammo(var/mob/user, var/datum/firemode/firemode)
 		if(can_shoot_partially)
 			var/ammo_per_shot = src.current_projectile.cost / src.current_projectile.firemode.shot_number
-			var/ammoCost = firemode.shot_number * ammo_per_shot
-			if(use_ammo(ammoCost))
+			if(use_ammo(ammo_per_shot, src.current_projectile.firemode.shot_number) > 0 )
 				return 1
 		else
 			if(src.ammo && src.current_projectile)
@@ -280,8 +290,15 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			var/obj/item/ammo/bullets/b = item
 			if(ON_COOLDOWN(src, "reload_spam", 2 DECI SECONDS))
 				return
-			result = b.loadammo(src, usr, internal_ammo_capacity)
-			amountLeft = b.amount_left
+
+			//If our gun supports mixed loads, don't just replace shells in the chamber
+			if (magazine && open_loading && magazine.supports_mixed_loads)
+				result = b.loadammo(src, usr, internal_ammo_capacity, TRUE)
+				amountLeft = b.amount_left
+			else
+				result = b.loadammo(src, usr, internal_ammo_capacity)
+				amountLeft = b.amount_left
+
 			if (magazine && open_loading && amountLeft > 0)
 				if (result == AMMO_RELOAD_ALREADY_FULL)
 					result = magazine.add_ammo(item, usr)
@@ -406,7 +423,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			step(user, user.inertia_dir)
 
 	proc/eject_magazine(mob/user)
-		if (src.magazine)
+		if (src.magazine && can_swap_magazine)
 			playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
 			user.put_in_hand_or_drop(src.magazine)
 			if (magic_extract) //automatically move bullets back into mags
@@ -1574,19 +1591,46 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_RIFLE
 	contraband = 5
 	ammo_cats = list(AMMO_SHOTGUN_ALL)
-	internal_ammo_capacity = 8
+	internal_ammo_capacity = 1
 	auto_eject = 0
 	can_dual_wield = 0
 	two_handed = 1
 	has_empty_state = 1
 	gildable = 1
-	default_magazine = /obj/item/ammo/bullets/abg
+	default_magazine = /obj/item/ammo/magazine/riot_12
+	open_loading = TRUE
 	var/racked_slide = FALSE
 
 
+	shorty
+		default_magazine = /obj/item/ammo/magazine/riot_12/filo
+		two_handed = FALSE
+		icon_state = "sawnshotty"
+		rack(var/atom/movable/user)
+			var/mob/mob_user = null
+			if(ismob(user))
+				mob_user = user
+			if (!src.racked_slide) //Are we racked?
+				if (src.ammo?.amount_left == 0)
+					boutput(mob_user, "<span class ='notice'>You are out of shells!</span>")
+					UpdateIcon()
+				else
+					src.racked_slide = TRUE
+					if (src.icon_state == "sawnshotty[src.gilded ? "-golden" : ""]") //"animated" racking
+						src.icon_state = "sawnshotty[src.gilded ? "-golden-empty" : "-empty"]" // having UpdateIcon() here breaks
+						animate(src, time = 0.2 SECONDS)
+						animate(icon_state = "sawnshotty[gilded ? "-golden" : ""]")
+					else
+						UpdateIcon() // Slide already open? Just close the slide
+					boutput(mob_user, "<span class='notice'>You rack the slide of the shotgun!</span>")
+					playsound(user.loc, 'sound/weapons/shotgunpump.ogg', 50, 1)
+					if (src.ammo?.amount_left < 8) // Do not eject shells if you're racking a full "clip"
+						var/turf/T = get_turf(src)
+						if (T && src.current_projectile.casing) // Eject shells on rack instead of on shoot()
+							new src.current_projectile.casing(T, src.forensic_ID)
 
 	New()
-		ammo = new default_magazine
+		magazine = new default_magazine
 		set_current_projectile(new/datum/projectile/bullet/abg)
 		..()
 
@@ -1598,7 +1642,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		return(..() && src.racked_slide)
 
 	shoot(var/target,var/start ,var/mob/user)
-		if(ammo.amount_left > 0 && !racked_slide)
+		if(ammo?.amount_left > 0 && !racked_slide)
 			boutput(user, "<span class='notice'>You need to rack the slide before you can fire!</span>")
 		..()
 		src.racked_slide = FALSE
