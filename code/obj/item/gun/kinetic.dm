@@ -13,7 +13,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	var/obj/item/ammo/magazine/magazine = null
 	/// If specified, only subclasses of these magazine will be accepted. Otherwise, any magazines of the right calibre will fit.
 	/// you could, for example, cram a 30 round 9mm SMG magazine into a glock!
-	var/supported_magazine_types = []
+	var/supported_magazine_types = list()
 	/// Can this gun have its magazine removed/replaced. If this has no magazine, leave false
 	var/can_swap_magazine = FALSE
 	/// Has this gun got a magless sprite?
@@ -54,10 +54,14 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 	// GUN BEHAVIOR DEFINES
 
-	var/magic_extract = KINETIC_MAGIC_UNCHAMBERING //! Does this gun magically re-insert bullets into ejected mags when unloaded, or swapped with incompatible ammo?
+	var/magic_extract = KINETIC_MAGIC_UNCHAMBERING_ON_UNLOAD //! Does this gun magically re-insert bullets into ejected mags when unloaded?
+	var/magic_unswap = KINETIC_MAGIC_UNCHAMBERING_PREVENT_MIXED_LOADS //! Does this gun magically re-insert bullets into mags when ammo type swaps?
 	var/manual_chambering = KINETIC_AWFUL_MANUAL_CHAMBERING //! Does this gun require manual intervention to chamber the first round?
 	var/chambering = KINETIC_CHAMBERING //! does this gun implicitly chamber bullets when a magazine is installed?
 	var/open_loading = KINETIC_OPEN_LOAD_EVERYTHING //! does hitting this gun with bullets load the magazine, too?
+
+	/// Does this gun automatically load the chamber after every shot? Assume 'yes' unless you want to make a pump action or something
+	var/autoloading = TRUE
 
 	/// Does this gun add gunshot residue when fired? Kinetic guns should (Convair880).
 	add_residue = TRUE
@@ -177,20 +181,20 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		else
 			oldAmmo.set_loc(T)
 
-	/// Magically fills up this gun's internal_ammo_capacity using an attached magazine. Like chambering a round.
+	/// Fills up this gun's internal_ammo_capacity using an attached magazine. Like chambering a round.
 	proc/pull_ammo()
 		if (magazine?.ammo_left() > 0 && chambering)
 			if (magazine.ammo?.type == ammo?.type)
-				var/amount = internal_ammo_capacity - ammo.amount_left
-				var/to_transfer = min(amount , magazine.ammo_left())
-				magazine.use(to_transfer)
-				ammo.amount_left += to_transfer
+				//We do this iteratively in case the magazine wants to swap projectile every X bullets.
+				while (magazine.get_ammo_type() == ammo.type && magazine.ammo_left() > 0 && src.ammo.amount_left < internal_ammo_capacity)
+					if (magazine.use(1))
+						src.ammo.amount_left++
 			else
 				// mixed ammo chambering is a no no for now. so only pull new ammo objects if we're empty
 				if (!src.ammo || src.ammo.amount_left <= 0)
 					src.ammo = magazine.pull_ammo(internal_ammo_capacity) || src.ammo
 
-	/// For semi-autos. ejects chambered cartridges to the floor, then loads from the magazine.
+	/// Ejects chambered cartridges to the floor, then loads from the magazine.
 	proc/rack_slide()
 		if (can_swap_magazine)
 			var/success = TRUE
@@ -235,13 +239,8 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 							set_current_projectile(projectile)
 						successes++
 			//...then reload the chamber(s)
-			if (src.ammo.amount_left < internal_ammo_capacity && magazine.ammo_left() > 0)
-				if (magazine.get_ammo_type() == ammo.type)
-					while (magazine.get_ammo_type() == ammo.type && magazine.ammo_left() > 0 && src.ammo.amount_left < internal_ammo_capacity)
-						if (magazine.use(1))
-							src.ammo.amount_left++
-				else
-					src.ammo = magazine.pull_ammo(internal_ammo_capacity) || src.ammo
+			if (autoloading && src.ammo.amount_left < internal_ammo_capacity && magazine.ammo_left() > 0)
+				src.pull_ammo()
 			return successes
 		else
 			if (ammoLeft >= cost)
@@ -293,10 +292,10 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 			//If our gun supports mixed loads, don't just replace shells in the chamber
 			if (magazine && open_loading && magazine.supports_mixed_loads)
-				result = b.loadammo(src, usr, internal_ammo_capacity, TRUE)
+				result = b.loadammo(src, usr, TRUE)
 				amountLeft = b.amount_left
 			else
-				result = b.loadammo(src, usr, internal_ammo_capacity)
+				result = b.loadammo(src, usr)
 				amountLeft = b.amount_left
 
 			if (magazine && open_loading && amountLeft > 0)
@@ -310,7 +309,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			if(ON_COOLDOWN(src, "reload_spam", 2 DECI SECONDS))
 				return
 			result = b.loadammo(src, usr)
-			amountLeft = b.ammo.amount_left
+			amountLeft = b.ammo?.amount_left ? b.ammo?.amount_left : 0
 		else
 			..()
 			return
@@ -422,21 +421,21 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			user.inertia_dir = get_dir(target, user)
 			step(user, user.inertia_dir)
 
+	/// Removes the magazine from this gun, implicitly unloading the chamber if appropriate behaviors are toggled on
 	proc/eject_magazine(mob/user)
 		if (src.magazine && can_swap_magazine)
 			playsound(user.loc, 'sound/weapons/gunload_click.ogg', 70, 1)
 			user.put_in_hand_or_drop(src.magazine)
 			if (magic_extract) //automatically move bullets back into mags
 				if (src.magazine.ammo_left() < src.magazine.max_amount)
-					//var/amount_transfer = min(src.ammo.amount_left, src.magazine.max_amount-src.magazine.ammo_left())
 					src.magazine.add_ammo(src.ammo)
 
 			src.magazine.UpdateIcon()
 			src.magazine = null
 			if (magic_extract) //drop any other loose shells on the floor
-				src.rack_slide(user)
+				src.rack_slide()
 			src.UpdateIcon()
-		else
+		else // If we have no removable magazine, eject bullets/casings.
 			if (src.ammo?.amount_left <= 0)
 				// The gun may have been fired; eject casings if so.
 				if ((src.casings_to_eject > 0) && src.current_projectile.casing)
@@ -460,7 +459,6 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			ammoHand.icon = src.ammo.icon
 			ammoHand.icon_state = src.ammo.icon_state
 			ammoHand.ammo_type = src.ammo.ammo_type
-			ammoHand.delete_on_reload = 1 // No duplicating empty magazines, please (Convair880).
 			ammoHand.UpdateIcon()
 			user.put_in_hand_or_drop(ammoHand)
 			ammoHand.after_unload(user)
@@ -556,7 +554,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	var/rifle_icon_state = ""
 	var/ammo_cats = list()
 	var/internal_ammo_capacity = 1
-	var/default_magazine = null
+	var/default_ammo = null
 	var/default_projectile = null
 
 	New()
@@ -569,7 +567,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		rifle_icon_state = "survival_rifle_22"
 		ammo_cats = list(AMMO_PISTOL_22)
 		internal_ammo_capacity = 10
-		default_magazine = /obj/item/ammo/bullets/bullet_22
+		default_ammo = /obj/item/ammo/bullets/bullet_22
 		default_projectile = /datum/projectile/bullet/bullet_22
 
 
@@ -578,7 +576,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		rifle_icon_state = "survival_rifle_9mm"
 		ammo_cats = list(AMMO_PISTOL_9MM_ALL)
 		internal_ammo_capacity = 15
-		default_magazine = /obj/item/ammo/bullets/bullet_9mm
+		default_ammo = /obj/item/ammo/bullets/bullet_9mm
 		default_projectile = /datum/projectile/bullet/bullet_9mm
 
 	barrel_556
@@ -586,7 +584,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		rifle_icon_state = "survival_rifle_556"
 		ammo_cats = list(AMMO_AUTO_556)
 		internal_ammo_capacity = 20
-		default_magazine = /obj/item/ammo/bullets/assault_rifle
+		default_ammo = /obj/item/ammo/bullets/assault_rifle
 		default_projectile = /datum/projectile/bullet/assault_rifle
 
 /obj/item/casing
@@ -705,10 +703,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_PISTOL
 	contraband = 0
 	internal_ammo_capacity = 200
-	default_magazine = /obj/item/ammo/bullets/vbullet
+	default_ammo = /obj/item/ammo/bullets/vbullet
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/vbullet)
 		..()
 
@@ -731,11 +729,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	internal_ammo_capacity = 2
 	var/failure_chance = 6
 	var/failured = 0
-	default_magazine = /obj/item/ammo/bullets/staples
+	default_ammo = /obj/item/ammo/bullets/staples
 
 	New()
 
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = 1 // start empty
 		set_current_projectile(new/datum/projectile/bullet/staple)
 		..()
@@ -779,7 +777,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		src.set_barrel_stats(src.barrel)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		..()
 
 	attackby(obj/item/b, mob/user)
@@ -825,7 +823,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		src.icon_state = barrel.rifle_icon_state
 		src.ammo_cats = barrel.ammo_cats
 		src.internal_ammo_capacity = barrel.internal_ammo_capacity
-		src.default_magazine = barrel.default_magazine
+		src.default_ammo = barrel.default_ammo
 		set_current_projectile(new barrel.default_projectile)
 		src.projectiles = list(current_projectile)
 		src.desc = desc = "A semi-automatic rifle, renowned for it's easily convertible caliber, developed by Mabinogi Firearms Company. It's currently fitted with a [src.barrel.name]."
@@ -904,10 +902,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	c_flags = EQUIPPED_WHILE_HELD
 
 	w_class = W_CLASS_BULKY
-	default_magazine = /obj/item/ammo/bullets/minigun
+	default_ammo = /obj/item/ammo/bullets/minigun
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/minigun)
 		AddComponent(/datum/component/holdertargeting/fullauto, 2.5, 0.4, 0.9) //you only get full auto, why would you burst fire with a minigun?
 		..()
@@ -933,7 +931,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	can_dual_wield = 0
 	two_handed = 1
 	gildable = 1
-	default_magazine = /obj/item/ammo/bullets/akm
+	default_ammo = /obj/item/ammo/bullets/akm
 	fire_animation = TRUE
 	flags =  FPRINT | TABLEPASS | CONDUCT | USEDELAY | EXTRADELAY
 	c_flags = NOT_EQUIPPED_WHEN_WORN | EQUIPPED_WHILE_HELD | ONBACK
@@ -942,7 +940,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammobag_restock_cost = 3
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/akm)
 		..()
 
@@ -966,11 +964,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	has_empty_state = 1
 	gildable = 1
-	default_magazine = /obj/item/ammo/bullets/rifle_3006
+	default_ammo = /obj/item/ammo/bullets/rifle_3006
 	fire_animation = TRUE
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/rifle_3006)
 		..()
 
@@ -991,11 +989,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	can_dual_wield = 0
 	two_handed = 1
 	gildable = 1
-	default_magazine = /obj/item/ammo/bullets/tranq_darts
+	default_ammo = /obj/item/ammo/bullets/tranq_darts
 	fire_animation = TRUE
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/tranq_dart)
 		..()
 
@@ -1014,7 +1012,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	has_empty_state = 1
 	gildable = 1
 	fire_animation = TRUE
-	default_magazine = /obj/item/ammo/bullets/nine_mm_NATO
+	default_ammo = /obj/item/ammo/bullets/nine_mm_NATO
 
 	New()
 		if (prob(70))
@@ -1022,8 +1020,8 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 			item_state = "glocktan"
 
 		if(throw_return)
-			default_magazine = /obj/item/ammo/bullets/nine_mm_NATO/boomerang
-		ammo = new default_magazine
+			default_ammo = /obj/item/ammo/bullets/nine_mm_NATO/boomerang
+		ammo = new default_ammo
 
 		set_current_projectile(new/datum/projectile/bullet/nine_mm_NATO)
 
@@ -1052,7 +1050,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	throw_speed = 1
 	throw_return = 1
 	fire_animation = TRUE
-	default_magazine = /obj/item/ammo/bullets/nine_mm_NATO
+	default_ammo = /obj/item/ammo/bullets/nine_mm_NATO
 	var/prob_clonk = 0
 
 	throw_begin(atom/target)
@@ -1090,8 +1088,8 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 		New()
 			..()
-			default_magazine = /obj/item/ammo/bullets/bullet_9mm
-			ammo = new default_magazine
+			default_ammo = /obj/item/ammo/bullets/bullet_9mm
+			ammo = new default_ammo
 			set_current_projectile(new/datum/projectile/bullet/bullet_9mm)
 			projectiles = list(current_projectile)
 			UpdateIcon()
@@ -1111,10 +1109,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	has_empty_state = TRUE
 	fire_animation = TRUE
 	gildable = TRUE
-	default_magazine = /obj/item/ammo/bullets/nine_mm_soviet
+	default_ammo = /obj/item/ammo/bullets/nine_mm_soviet
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new /datum/projectile/bullet/nine_mm_soviet)
 		..()
 
@@ -1133,12 +1131,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	has_empty_state = 1
 	gildable = 0
 	fire_animation = FALSE
-	default_magazine = /obj/item/ammo/bullets/veritate
+	default_ammo = /obj/item/ammo/bullets/veritate
 	ammobag_magazines = list(/obj/item/ammo/bullets/veritate)
 	ammobag_restock_cost = 2
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/veritate)
 		projectiles = list(current_projectile,new/datum/projectile/bullet/veritate/burst)
 		..()
@@ -1170,13 +1168,13 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	spread_angle = 2
 	can_dual_wield = 0
-	default_magazine = /obj/item/ammo/bullets/nine_mm_NATO
+	default_ammo = /obj/item/ammo/bullets/nine_mm_NATO
 	var/cases_to_eject = 0
 	var/open = FALSE
 
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/nine_mm_NATO/burst)
 		..()
 
@@ -1243,13 +1241,13 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_REVOLVER
 	ammo_cats = list(AMMO_REVOLVER_SYNDICATE, AMMO_REVOLVER_DETECTIVE) // Just like in RL (Convair880).
 	internal_ammo_capacity = 7
-	default_magazine = /obj/item/ammo/bullets/a357
+	default_ammo = /obj/item/ammo/bullets/a357
 	fire_animation = TRUE
 	ammobag_magazines = list(/obj/item/ammo/bullets/a357, /obj/item/ammo/bullets/a357/AP)
 	ammobag_restock_cost = 2
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/revolver_357)
 		..()
 
@@ -1264,11 +1262,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_REVOLVER_DETECTIVE)
 	internal_ammo_capacity = 7
 	gildable = 1
-	default_magazine = /obj/item/ammo/bullets/a38/stun
+	default_ammo = /obj/item/ammo/bullets/a38/stun
 	fire_animation = TRUE
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/revolver_38/stunners)
 		..()
 
@@ -1285,11 +1283,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_FOAMDART)
 	internal_ammo_capacity = 1
 	muzzle_flash = null
-	default_magazine = /obj/item/ammo/bullets/foamdarts
+	default_ammo = /obj/item/ammo/bullets/foamdarts
 	var/pulled = FALSE
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = 1
 		set_current_projectile(new/datum/projectile/bullet/foamdart)
 		..()
@@ -1383,10 +1381,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_FOAMDART)
 	internal_ammo_capacity = 6
 	muzzle_flash = null
-	default_magazine = /obj/item/ammo/bullets/foamdarts
+	default_ammo = /obj/item/ammo/bullets/foamdarts
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/foamdart)
 		..()
 /obj/item/gun/kinetic/foamdartshotgun
@@ -1405,10 +1403,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_FOAMDART)
 	internal_ammo_capacity = 12
 	muzzle_flash = null
-	default_magazine = /obj/item/ammo/bullets/foamdarts
+	default_ammo = /obj/item/ammo/bullets/foamdarts
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/special/spreader/buckshot_burst/foamdarts)
 		..()
 
@@ -1427,10 +1425,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	gildable = 1
 	w_class = W_CLASS_SMALL
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/blow_darts/single
+	default_ammo = /obj/item/ammo/bullets/blow_darts/single
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/blow_dart)
 		..()
 
@@ -1444,7 +1442,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	internal_ammo_capacity = 2
 	w_class = W_CLASS_SMALL
 	muzzle_flash = null
-	default_magazine = /obj/item/ammo/bullets/derringer
+	default_ammo = /obj/item/ammo/bullets/derringer
 	fire_animation = TRUE
 
 	afterattack(obj/O as obj, mob/user as mob)
@@ -1458,7 +1456,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		return
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/derringer)
 		..()
 
@@ -1480,7 +1478,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_REVOLVER_45)
 	spread_angle = 1
 	internal_ammo_capacity = 7
-	default_magazine = /obj/item/ammo/bullets/c_45
+	default_ammo = /obj/item/ammo/bullets/c_45
 
 	detective
 		name = "\improper Peacemaker"
@@ -1488,14 +1486,14 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		w_class = W_CLASS_SMALL
 		force = MELEE_DMG_REVOLVER
 		ammo_cats = list(AMMO_REVOLVER_DETECTIVE)
-		default_magazine = /obj/item/ammo/bullets/a38/stun
+		default_ammo = /obj/item/ammo/bullets/a38/stun
 		New()
 			..()
-			ammo = new default_magazine
+			ammo = new default_ammo
 			set_current_projectile(new/datum/projectile/bullet/revolver_38/stunners)
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/revolver_45)
 		..()
 
@@ -1510,10 +1508,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_PISTOL
 	ammo_cats = list(AMMO_FLINTLOCK)
 	internal_ammo_capacity = 1
-	default_magazine = /obj/item/ammo/bullets/flintlock/single
+	default_ammo = /obj/item/ammo/bullets/flintlock/single
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/flintlock)
 		..()
 
@@ -1541,14 +1539,14 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	internal_ammo_capacity = 8
 	auto_eject = 1
 	can_dual_wield = 0
-	default_magazine = /obj/item/ammo/bullets/a12
+	default_ammo = /obj/item/ammo/bullets/a12
 	ammobag_magazines = list(/obj/item/ammo/bullets/a12, /obj/item/ammo/bullets/aex)
 	ammobag_restock_cost = 2
 
 	New()
 		if(prob(10))
 			name = pick("SPEZZ-12", "SPESS-12", "SPETZ-12", "SPOCK-12", "SCHPATZL-12", "SABRINA-12", "SAURUS-12", "SABER-12", "SOSIG-12", "DINOHUNTER-12", "PISS-12", "ASS-12", "SPES-12", "SHIT-12", "SHOOT-12", "SHOTGUN-12", "FAMILYGUY-12", "SPAGOOTER-12")
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/a12)
 		..()
 
@@ -1706,10 +1704,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	has_uncocked_state = TRUE
 	fire_animation = TRUE
 	gildable = TRUE
-	default_magazine = /obj/item/ammo/bullets/pipeshot/scrap/five
+	default_ammo = /obj/item/ammo/bullets/pipeshot/scrap/five
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new /datum/projectile/special/spreader/buckshot_burst/scrap)
 		..()
 
@@ -1723,10 +1721,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_SHOTGUN_LOW)
 	internal_ammo_capacity = 1
 	has_empty_state = 1
-	default_magazine = /obj/item/ammo/bullets/flare/single
+	default_ammo = /obj/item/ammo/bullets/flare/single
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/flare)
 		..()
 
@@ -1748,7 +1746,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	w_class = W_CLASS_BULKY
 	flags =  FPRINT | TABLEPASS | CONDUCT | USEDELAY | EXTRADELAY
-	default_magazine = /obj/item/ammo/bullets/a12
+	default_ammo = /obj/item/ammo/bullets/a12
 	sound_load_override = 'sound/weapons/gunload_sawnoff.ogg'
 
 
@@ -1843,7 +1841,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_RIFLE
 	two_handed = TRUE
 	w_class = W_CLASS_BULKY
-	default_magazine = /obj/item/ammo/bullets/flintlock/rifle/single
+	default_ammo = /obj/item/ammo/bullets/flintlock/rifle/single
 
 	New()
 		..()
@@ -1859,10 +1857,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	contraband = 6
 	ammo_cats = list(AMMO_COILGUN)
 	internal_ammo_capacity = 2
-	default_magazine = /obj/item/ammo/bullets/rod
+	default_ammo = /obj/item/ammo/bullets/rod
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/rod)
 		..()
 
@@ -1877,11 +1875,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_GRENADE_ALL)
 	internal_ammo_capacity = 1
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/smoke/single
+	default_ammo = /obj/item/ammo/bullets/smoke/single
 	fire_animation = TRUE
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/smoke)
 		..()
 
@@ -1902,10 +1900,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		src.Attackby(TO_LOAD, user)
 
 	breach
-		default_magazine = /obj/item/ammo/bullets/breach_flashbang/single
+		default_ammo = /obj/item/ammo/bullets/breach_flashbang/single
 		New()
 			..()
-			ammo = new default_magazine
+			ammo = new default_ammo
 			set_current_projectile(new/datum/projectile/bullet/breach_flashbang)
 
 //1.58
@@ -1931,14 +1929,14 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	muzzle_flash = "muzzle_flash_launch"
 	has_empty_state = 1
-	default_magazine = /obj/item/ammo/bullets/rpg
+	default_ammo = /obj/item/ammo/bullets/rpg
 	ammobag_magazines = list(/obj/item/ammo/bullets/rpg)
 	ammobag_spec_required = TRUE
 	ammobag_restock_cost = 4
 
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = 0 // Spawn empty.
 		set_current_projectile(new /datum/projectile/bullet/rpg)
 		..()
@@ -1983,14 +1981,14 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	can_dual_wield = 0
 	two_handed = 1
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/mrl
+	default_ammo = /obj/item/ammo/bullets/mrl
 	ammobag_magazines = list(/obj/item/ammo/bullets/mrl)
 	ammobag_spec_required = TRUE
 	ammobag_restock_cost = 6
 
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = 0 // Spawn empty.
 		set_current_projectile(new /datum/projectile/bullet/homing/mrl)
 		..()
@@ -2024,10 +2022,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	can_dual_wield = 0
 	two_handed = 1
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/antisingularity
+	default_ammo = /obj/item/ammo/bullets/antisingularity
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = 0 // Spawn empty.
 		set_current_projectile(new /datum/projectile/bullet/antisingularity)
 		..()
@@ -2046,7 +2044,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_FLINTLOCK_MORTAR)
 	force = MELEE_DMG_RIFLE
 	two_handed = TRUE
-	default_magazine = /obj/item/ammo/bullets/flintlock/mortar/single
+	default_ammo = /obj/item/ammo/bullets/flintlock/mortar/single
 
 	New()
 		..()
@@ -2062,10 +2060,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	ammo_cats = list(AMMO_DERRINGER_LITERAL)
 	internal_ammo_capacity = 6 //6 guns
 	force = MELEE_DMG_SMG
-	default_magazine = /obj/item/ammo/bullets/gun
+	default_ammo = /obj/item/ammo/bullets/gun
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = 6 //spawn full please
 		set_current_projectile(new /datum/projectile/special/spawner/gun)
 		..()
@@ -2079,10 +2077,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	internal_ammo_capacity = 10
 	ammo_cats = list(AMMO_AIRZOOKA)
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/airzooka
+	default_ammo = /obj/item/ammo/bullets/airzooka
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/airzooka)
 		..()
 
@@ -2105,10 +2103,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	slowdown_time = 0
 	two_handed = 1
 	w_class = W_CLASS_BULKY
-	default_magazine = /obj/item/ammo/bullets/meowitzer
+	default_ammo = /obj/item/ammo/bullets/meowitzer
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/special/meowitzer)
 		..()
 
@@ -2123,10 +2121,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 			..()
 
 /obj/item/gun/kinetic/meowitzer/inert
-	default_magazine = /obj/item/ammo/bullets/meowitzer
+	default_ammo = /obj/item/ammo/bullets/meowitzer
 	New()
 		..()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/special/meowitzer/inert)
 
 
@@ -2170,12 +2168,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	icon_state = "smartgun"
 	internal_ammo_capacity = 20
 	ammo_cats = list(AMMO_PISTOL_22)
-	default_magazine = /obj/item/ammo/bullets/bullet_22/smartgun
+	default_ammo = /obj/item/ammo/bullets/bullet_22/smartgun
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_22/smartgun)
 
 	New()
 		..()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/bullet_22/smartgun)
 		AddComponent(/datum/component/holdertargeting/smartgun/nukeop, 4)
 
@@ -2199,13 +2197,13 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	has_empty_state = 1
 	can_swap_magazine = TRUE
 	has_magless_state = TRUE
-	default_magazine = /obj/item/ammo/bullets/bullet_9mm/smg
+	default_ammo = /obj/item/ammo/bullets/bullet_9mm/smg
 	ammobag_magazines = list(/obj/item/ammo/bullets/bullet_9mm/smg)
 	ammobag_restock_cost = 2
 
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/bullet_9mm/smg)
 		..()
 
@@ -2245,13 +2243,13 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	auto_eject = 1
 	hide_attack = ATTACK_FULLY_HIDDEN
 	muzzle_flash = null
-	default_magazine = /obj/item/ammo/bullets/tranq_darts/syndicate/pistol
+	default_ammo = /obj/item/ammo/bullets/tranq_darts/syndicate/pistol
 	fire_animation = TRUE
 	ammobag_magazines = list(/obj/item/ammo/bullets/tranq_darts/syndicate/pistol)
 	ammobag_restock_cost = 2
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/tranq_dart/syndicate/pistol)
 		..()
 
@@ -2268,12 +2266,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	auto_eject = 1
 	two_handed = 1
 	can_dual_wield = 0
-	default_magazine = /obj/item/ammo/bullets/buckshot_burst
+	default_ammo = /obj/item/ammo/bullets/buckshot_burst
 	fire_animation = TRUE
 	has_empty_state = TRUE
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/special/spreader/buckshot_burst/)
 		..()
 
@@ -2298,11 +2296,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	can_dual_wield = 0
 	spread_angle = 0
-	default_magazine = /obj/item/ammo/bullets/assault_rifle
+	default_ammo = /obj/item/ammo/bullets/assault_rifle
 
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/assault_rifle)
 		projectiles = list(current_projectile,new/datum/projectile/bullet/assault_rifle/burst)
 		..()
@@ -2363,12 +2361,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	two_handed = 1
 	w_class = W_CLASS_BULKY
-	default_magazine = /obj/item/ammo/bullets/lmg
+	default_ammo = /obj/item/ammo/bullets/lmg
 	ammobag_magazines = list(/obj/item/ammo/bullets/lmg)
 	ammobag_restock_cost = 3
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/lmg)
 		projectiles = list(current_projectile, new/datum/projectile/bullet/lmg/auto)
 		AddComponent(/datum/component/holdertargeting/fullauto, 1.5 DECI SECONDS, 1.5 DECI SECONDS, 1)
@@ -2403,14 +2401,14 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	w_class = W_CLASS_BULKY
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/cannon/single
+	default_ammo = /obj/item/ammo/bullets/cannon/single
 	ammobag_magazines = list(/obj/item/ammo/bullets/cannon)
 	ammobag_spec_required = TRUE
 	ammobag_restock_cost = 3
 
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/cannon)
 		..()
 
@@ -2440,13 +2438,13 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	w_class = W_CLASS_BULKY
 	muzzle_flash = "muzzle_flash_launch"
-	default_magazine = /obj/item/ammo/bullets/howitzer
+	default_ammo = /obj/item/ammo/bullets/howitzer
 	ammobag_magazines = list(/obj/item/ammo/bullets/howitzer)
 	ammobag_spec_required = TRUE
 	ammobag_restock_cost = 5
 
 	New()
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/howitzer)
 		..()
 
@@ -2472,7 +2470,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	two_handed = 1
 	can_dual_wield = 0
 	auto_eject = 0
-	default_magazine = /obj/item/ammo/bullets/grenade_round/explosive
+	default_ammo = /obj/item/ammo/bullets/grenade_round/explosive
 	ammobag_magazines = list(/obj/item/ammo/bullets/grenade_round/explosive)
 	ammobag_spec_required = TRUE
 	ammobag_restock_cost = 3
@@ -2480,7 +2478,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		ammo.amount_left = internal_ammo_capacity
 		set_current_projectile(new/datum/projectile/bullet/grenade_round/explosive)
 		..()
@@ -2532,7 +2530,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	w_class = W_CLASS_BULKY
 
 	shoot_delay = 1 SECOND
-	default_magazine = /obj/item/ammo/bullets/rifle_762_NATO
+	default_ammo = /obj/item/ammo/bullets/rifle_762_NATO
 	ammobag_magazines = list(/obj/item/ammo/bullets/rifle_762_NATO)
 	ammobag_restock_cost = 3
 
@@ -2540,7 +2538,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
-		ammo = new default_magazine
+		ammo = new default_ammo
 		set_current_projectile(new/datum/projectile/bullet/rifle_762_NATO)
 		snipermove = new/datum/movement_controller/sniper_look()
 		..()

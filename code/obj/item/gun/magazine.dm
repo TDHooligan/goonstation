@@ -8,8 +8,8 @@
 	var/max_amount = 1000
 	/// The kind of bullets this starts loaded with
 	var/default_load = /obj/item/ammo/bullets/bullet_9mm
-	/// The ammo category this magazine has
-	var/ammo_cat = AMMO_PISTOL_9MM
+	/// The ammo categories this magazine supports.
+	var/ammo_cats
 	/// If enabled, guns will attempt to load into this instead of swapping ammo in the chamber
 	var/supports_mixed_loads = FALSE
 	/// The ammo object. This may contain more than 1 slot's worth of ammo!
@@ -39,8 +39,10 @@
 				else
 					object = src.ammo
 					src.ammo = null
+				object.UpdateIcon()
 				user?.visible_message("<span class='alert'>[user] unloads [src].</span>", "<span class='alert'>You unload [src]. It has [src.ammo?.amount_left ? src.ammo.amount_left : 0] rounds remaining.</span>")
 				user.put_in_hand_or_drop(object)
+				UpdateIcon()
 				return
 		..()
 	New()
@@ -80,6 +82,8 @@
 			src.ammo.amount_left = amt
 			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You swap the ammo loaded in [src]. It has [src.ammo.amount_left] rounds remaining.</span>")
 			otherAmmo.use(amt)
+			if (otherAmmo.amount_left <= 0)
+				qdel(otherAmmo)
 			UpdateIcon()
 
 
@@ -112,9 +116,16 @@
 		//attempt to implicitly chamber a round for tactical reloading without using *rack
 		if (newMag.ammo.type == ammo.type)
 			K.pull_ammo()
+		else if (K.magic_unswap)
+			if (K.magazine.ammo_left() < K.magazine.max_amount)
+				K.magazine.add_ammo(K.ammo)
+
 		usr.u_equip(newMag)
 		usr.put_in_hand_or_drop(src)
 		newMag.set_loc(K)
+		if (K.magic_unswap && newMag.ammo.type != ammo.type)
+			K.magazine = null
+			K.rack_slide()
 		K.magazine = newMag
 		K.UpdateIcon()
 		src.UpdateIcon()
@@ -136,13 +147,17 @@
 			return AMMO_RELOAD_INCOMPATIBLE
 		var/check = 0
 		// make sure we can load whatever ammo is in here
-		if (!ammo || ammo.ammo_cat in K.ammo_cats)
+		if (!ammo || (ammo.ammo_cat in K.ammo_cats))
 			check = 1
 		else if (K.ammo_cats == null) //someone forgot to set ammo cats. scream
 			check = 1
-		if ()
-		for (var/type in K.supported_magazine_types)
-			if ()
+		if (length(K.supported_magazine_types))
+			var/valid = FALSE
+			for (var/type as anything in K.supported_magazine_types)
+				if (istype(src,type))
+					valid = TRUE
+			if (!valid)
+				check = 0
 
 		if (!check)
 			return AMMO_RELOAD_INCOMPATIBLE
@@ -175,9 +190,12 @@
 
 	attackby(obj/b, mob/user)
 		if(istype(b, /obj/item/ammo/bullets))
-			if(b.type == src.ammo.type)
+			var/obj/item/ammo/bullets/loadedAmmo = b
+			if (b.type == src.ammo?.type)
 				src.ammo.attackby(b,user)
 				UpdateIcon()
+			else if(loadedAmmo.ammo_cat in ammo_cats)
+				add_ammo(b,user)
 				return
 
 	speedloader
@@ -188,7 +206,7 @@
 			name = ".38 speedloader"
 			desc = "A speedloader for .38 ammunition."
 			icon_state = "38-7"
-			ammo_cat = AMMO_REVOLVER_DETECTIVE
+			ammo_cats = list(AMMO_REVOLVER_DETECTIVE)
 			start_amount = 7
 			max_amount = 7
 			icon_dynamic = 1
@@ -199,7 +217,7 @@
 		name = "9mm SMG magazine"
 		desc = "An extended 9mm magazine for a sub machine gun."
 		icon_state = "smg_magazine"
-		ammo_cat = AMMO_SMG_9MM
+		ammo_cats = list( AMMO_SMG_9MM)
 		start_amount = 30
 		max_amount = 30
 		default_load = /obj/item/ammo/bullets/bullet_9mm/smg
@@ -256,6 +274,7 @@
 		max_amount = 10
 		desc = "A tiny magazine for tiny bullets."
 		default_load = /obj/item/ammo/bullets/bullet_22
+		ammo_cats = list( AMMO_PISTOL_22)
 		faith
 			start_amount = 4
 			max_amount = 4
@@ -269,7 +288,7 @@
 		max_amount = 7
 		desc = "A tube magazine for a shotgun. You shouldn't see this!"
 		default_load = /obj/item/ammo/bullets/abg
-
+		ammo_cats = list( AMMO_SHOTGUN_ALL)
 		// FILO mags support mixed loads. it's an interesting area to explore for shotguns. also just an easy test case for the refactor
 		filo
 			supports_mixed_loads = TRUE
@@ -278,16 +297,26 @@
 				..()
 				ammos = new/list()
 			add_ammo(obj/item/ammo/bullets/otherAmmo, mob/user)
-				var/amount = min(otherAmmo.amount_left, max_amount-ammo_left())
-				if (amount >= otherAmmo.amount_left)
-					ammos += otherAmmo
-					user.u_equip(otherAmmo)
-					otherAmmo.set_loc(src)
-				else
-					var/obj/item/ammo/bullets/newAmmo = new otherAmmo.type(src)
-					newAmmo.amount_left = amount
+				var/amount = min(1,min(otherAmmo.amount_left, max_amount-ammo_left()))
+				//Merge ammos if types match
+				if (length(ammos) && otherAmmo.type == ammos[length(ammos)].type)
 					otherAmmo.amount_left -= amount
-				otherAmmo.UpdateIcon()
+					ammos[length(ammos)].amount_left += amount
+				else
+					if (amount >= otherAmmo.amount_left)
+						ammos += otherAmmo
+						user.u_equip(otherAmmo)
+						otherAmmo.set_loc(src)
+					else
+						var/obj/item/ammo/bullets/newAmmo = new otherAmmo.type(src)
+						newAmmo.amount_left = amount
+						otherAmmo.amount_left -= amount
+						newAmmo.set_loc(src)
+						ammos += newAmmo
+				if (otherAmmo.amount_left == 0)
+					qdel(otherAmmo)
+				else
+					otherAmmo.UpdateIcon()
 
 			// FILO breaks down if you shoot a fraction of a bullet, as this only returns the top shot.
 			// but this is a bizarre use case I don't think has ever had a reason to exist in kinetics.
@@ -304,6 +333,7 @@
 			use(var/amt = 0)
 				var/res = ammos[length(ammos)].use(amt)
 				if (ammos[length(ammos)].amount_left == 0) //delete empty stacks
+					qdel(ammos[length(ammos)])
 					ammos -= ammos[length(ammos)]
 				src.UpdateIcon()
 				return res

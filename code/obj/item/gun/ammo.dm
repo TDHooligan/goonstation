@@ -63,8 +63,6 @@
 	var/icon_short = null // If dynamic = 1, the short icon_state has to be specified as well.
 	var/icon_empty = null
 
-	// This is needed to avoid duplicating empty magazines (Convair880).
-	var/delete_on_reload = 0
 	var/force_new_current_projectile = 0 //for custom grenade shells
 
 	var/sound_load = 'sound/weapons/gunload_light.ogg'
@@ -103,16 +101,14 @@
 		if ((A.amount_left < 1) && (src.amount_left < limit))
 			A.UpdateIcon()
 			src.UpdateIcon()
-			if (A.delete_on_reload)
-				qdel(A) // No duplicating empty magazines, please (Convair880).
+			qdel(A) // No duplicating empty magazines, please (Convair880).
 			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining.</span>")
 			return // Couldn't fully reload the gun.
 		if ((A.amount_left >= 0) && (src.amount_left == limit))
 			A.UpdateIcon()
 			src.UpdateIcon()
 			if (A.amount_left == 0)
-				if (A.delete_on_reload)
-					qdel(A) // No duplicating empty magazines, please (Convair880).
+				qdel(A) // No duplicating empty magazines, please (Convair880).
 			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name].</span>")
 			return // Full reload or ammo left over.
 
@@ -149,7 +145,6 @@
 			ammoDrop.icon = K.ammo.icon
 			ammoDrop.icon_state = K.ammo.icon_state
 			ammoDrop.ammo_type = K.ammo.ammo_type
-			ammoDrop.delete_on_reload = 1 // No duplicating empty magazines, please.
 			ammoDrop.UpdateIcon()
 			usr.put_in_hand_or_drop(ammoDrop)
 			ammoDrop.after_unload(usr)
@@ -159,7 +154,6 @@
 			return AMMO_SWAP_ALREADY_FULL
 
 		else
-			boutput(world, "swapping")
 			usr.u_equip(newBullets) // We need a free hand for ammoHand first.
 
 			// Some ammo boxes have dynamic icon/desc updates we can't get otherwise.
@@ -169,12 +163,10 @@
 			ammoHand.icon = K.ammo.icon
 			ammoHand.icon_state = K.ammo.icon_state
 			ammoHand.ammo_type = K.ammo.ammo_type
-			ammoHand.delete_on_reload = 1 // No duplicating empty magazines, please.
 			ammoHand.UpdateIcon()
 			usr.put_in_hand_or_drop(ammoHand)
 			ammoHand.after_unload(usr)
 
-			boutput(world, "swapped")
 			var/obj/item/ammo/bullets/ammoGun = new newBullets.type // Ditto.
 			ammoGun.amount_left = newBullets.amount_left
 			ammoGun.name = newBullets.name
@@ -182,19 +174,17 @@
 			ammoGun.icon_state = newBullets.icon_state
 			ammoGun.ammo_type = newBullets.ammo_type
 			//DEBUG_MESSAGE("Swapped [K]'s ammo with [newBullets.type].")
-			boutput(world, "swapped>??")
 			qdel(K.ammo) // Make room for the new ammo.
 			qdel(newBullets) // We don't need you anymore.
 			ammoGun.set_loc(K)
 			K.ammo = ammoGun
 			K.set_current_projectile(ammoGun.ammo_type)
-			boutput(world, "swapped!!!")
 			if(K.silenced)
 				K.current_projectile.shot_sound = 'sound/weapons/suppressed_22.ogg'
 				K.current_projectile.shot_sound_extrarange = -10
 			K.UpdateIcon()
 
-			return
+			return AMMO_SWAP_SOURCE_EMPTY
 
 	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr, defer_swap = FALSE)
 		// Also see attackby() in kinetic.dm.
@@ -263,18 +253,14 @@
 				src.UpdateIcon()
 				K.UpdateIcon()
 				K.ammo.UpdateIcon()
-				if (src.delete_on_reload)
-					//DEBUG_MESSAGE("[K]: [src.type] (now empty) was deleted on partial reload.")
-					qdel(src) // No duplicating empty magazines, please (Convair880).
+				qdel(src) // No duplicating empty magazines, please (Convair880).
 				return AMMO_RELOAD_PARTIAL // Couldn't fully reload the gun.
 			if ((src.amount_left >= 0) && (K.ammo.amount_left == K.internal_ammo_capacity))
 				src.UpdateIcon()
 				K.UpdateIcon()
 				K.ammo.UpdateIcon()
 				if (src.amount_left == 0)
-					if (src.delete_on_reload)
-						//DEBUG_MESSAGE("[K]: [src.type] (now empty) was deleted on full reload.")
-						qdel(src) // No duplicating empty magazines, please (Convair880).
+					qdel(src) // No duplicating empty magazines, please (Convair880).
 				return AMMO_RELOAD_FULLY // Full reload or ammo left over.
 
 	update_icon()
@@ -350,7 +336,8 @@
 	sname = ".22 LR"
 	name = ".22 magazine"
 	desc = "Despite being very small, these bullets are still lethal."
-	icon_state = "pistol_magazine"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "22"
 	amount_left = 10
 	max_amount = 10
 	ammo_type = new/datum/projectile/bullet/bullet_22
@@ -359,7 +346,8 @@
 /obj/item/ammo/bullets/bullet_22/smartgun
 	name = ".22 smartgun magazine"
 	desc = "A fancy, high-tech extended magazine of .22 bullets."
-	icon_state = "pistol_magazine_smart"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "22-smart"
 	amount_left = 20
 	max_amount = 20
 	ammo_type = new/datum/projectile/bullet/bullet_22/smartgun
@@ -370,9 +358,10 @@
 
 /obj/item/ammo/bullets/bullet_22HP
 	sname = ".22 Hollow Point"
-	name = ".22 HP magazine"
+	name = ".22 Hollow Point"
 	desc = "Some JHP bullets. They expand as they penetrate, causing additional tissue damage at the cost of less armor penetration."
-	icon_state = "pistol_magazine_hp"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "22-ap"
 	amount_left = 10
 	max_amount = 10
 	ammo_type = new/datum/projectile/bullet/bullet_22/HP
@@ -381,10 +370,11 @@
 //0.223
 /obj/item/ammo/bullets/assault_rifle
 	sname = "5.56x45mm NATO"
-	name = "STENAG magazine" //heh
-	desc = "A magazine of 5.56 rounds, an intermediate rifle cartridge."
+	name = "5.56x45mm NATO" //heh
+	desc = "A handful of 5.56 rounds, an intermediate rifle cartridge."
 	ammo_type = new/datum/projectile/bullet/assault_rifle
-	icon_state = "stenag_mag"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "556"
 	amount_left = 20
 	max_amount = 20
 	ammo_cat = AMMO_AUTO_556
@@ -395,7 +385,8 @@
 		name = "AP STENAG magazine"
 		desc = "5.56 AP bullets. The iron core prevents deformation and causes rounds to pierce further, but reduces the overall force of the bullet."
 		ammo_type = new/datum/projectile/bullet/assault_rifle/armor_piercing
-		icon_state = "stenag_mag-AP"
+		icon = 'icons/obj/items/bullets.dmi'
+		icon_state = "556-ap"
 
 //0.308
 /obj/item/ammo/bullets/minigun
@@ -414,7 +405,8 @@
 	name = "AKM magazine"
 	desc = "A curved 30 round magazine, for the AKM assault rifle."
 	ammo_type = new/datum/projectile/bullet/akm
-	icon_state = "ak47"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "762"
 	amount_left = 30
 	max_amount = 30
 	ammo_cat = AMMO_AUTO_762
@@ -438,7 +430,8 @@
 	name = "7.62 NATO magazine"
 	desc = "Some powerful 7.62 cartridges."
 	ammo_type = new/datum/projectile/bullet/rifle_762_NATO
-	icon_state = "rifle_box_mag" //todo
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "308"
 	amount_left = 6
 	max_amount = 6
 	ammo_cat = AMMO_RIFLE_308
@@ -505,8 +498,8 @@
 	name = "LMG belt"
 	desc = "A belt of 7.62 LMG rounds. They have much less gunpowder in them to prevent overheating and cookoffs."
 	ammo_type = new/datum/projectile/bullet/lmg
-	icon_state = "lmg_ammo"
-	icon_empty = "lmg_ammo-0"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "556-belt" //probably fine
 	amount_left = 100
 	max_amount = 100
 	ammo_cat = AMMO_AUTO_308
@@ -525,12 +518,12 @@
 	sname = "9×19mm Parabellum"
 	name = "9mm magazine"
 	desc = "A handful of 9x19mm rounds, an intermediate pistol cartridge."
-	icon_state = "9mm-loose"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "9mm"
 	amount_left = 15
 	max_amount = 15
 	ammo_type = new/datum/projectile/bullet/bullet_9mm
 	ammo_cat = AMMO_PISTOL_9MM
-	delete_on_reload = TRUE
 
 	five_shots
 		amount_left = 5
@@ -538,7 +531,6 @@
 	smg
 		name = "9mm SMG ammo"
 		desc = "9mm ammunition for a submachine gun."
-		icon_state = "9mm-loose"
 		amount_left = 30
 		max_amount = 30
 		ammo_cat = AMMO_SMG_9MM
@@ -547,7 +539,7 @@
 		incendiary
 			name = "9mm SMG Tracer ammo"
 			desc = "9mm tracer ammunition for a submachine gun."
-			icon_state = "9mm-loose-inc"
+			icon_state = "9mm-ap"
 			ammo_cat = AMMO_SMG_9MM
 			ammo_type = new/datum/projectile/bullet/bullet_9mm/smg/incendiary
 
@@ -556,7 +548,8 @@
 	sname = "9mm frangible"
 	name = "9mm frangible magazine"
 	desc = "Some 9mm incapacitating bullets, made of plastic with rubber tips. Despite being sublethal, they can still do damage."
-	icon_state = "pistol_clip"	//9mm_clip that exists already. Also, put this in hacked manufacturers cause these bullets are not good.
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "9mm-frangible"
 	amount_left = 18
 	max_amount = 18
 	ammo_type = new/datum/projectile/bullet/nine_mm_NATO
@@ -569,8 +562,8 @@
 	sname = "9x18mm Makarov"
 	name = "9x18mm magazine"
 	desc = "A standard 8 round magazine, for the PM pistol. It featuring an observation slot for checking remaining munitions."
-	icon_state = "makarov_magazine"
-	icon_empty = "makarov_magazine-empty"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "9mm-soviet"
 	amount_left = 8
 	max_amount = 8
 	ammo_type = new/datum/projectile/bullet/nine_mm_soviet
@@ -590,64 +583,54 @@
 //0.357
 /obj/item/ammo/bullets/a357
 	sname = ".357 Mag"
-	name = ".357 speedloader"
-	desc = "A speedloader of .357 magnum revolver bullets."
-	icon_state = "38-7"
+	name = ".357 Magnum"
+	desc = "A handful of .357 magnum revolver bullets."
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "357"
 	amount_left = 7
 	max_amount = 7
 	ammo_type = new/datum/projectile/bullet/revolver_357
 	ammo_cat = AMMO_REVOLVER_SYNDICATE
-	icon_dynamic = 1
-	icon_short = "38"
-	icon_empty = "speedloader_empty"
 
 /obj/item/ammo/bullets/a357/AP
 	sname = ".357 Mag AP"
-	name = ".357 AP speedloader"
-	desc = "A speedloader of .357 magnum armor piercing bullets. The iron core increases penetration at the cost of stopping power."
-	icon_state = "38A-7"
+	name = ".357 AP"
+	desc = "A handful of .357 magnum armor piercing bullets. The iron core increases penetration at the cost of stopping power."
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "357-ap"
 	ammo_type = new/datum/projectile/bullet/revolver_357/AP
-	icon_dynamic = 1
-	icon_short = "38A"
-	icon_empty = "speedloader_empty"
 
 /obj/item/ammo/bullets/a38
 	sname = ".38 Spc"
-	name = ".38 speedloader"
-	desc = "A speedloader of .38 special, a popular police and detective cartridge."
-	icon_state = "38-7"
+	name = ".38 Special"
+	desc = "A handful of .38 special, a popular police and detective cartridge."
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "38spc"
 	amount_left = 7
 	max_amount = 7
 	ammo_type = new/datum/projectile/bullet/revolver_38
 	ammo_cat = AMMO_REVOLVER_DETECTIVE
-	icon_dynamic = 1
-	icon_short = "38"
-	icon_empty = "speedloader_empty"
 
 //0.38
 /obj/item/ammo/bullets/a38/AP
 	sname = ".38 Spc AP"
-	name = ".38 AP speedloader"
-	desc = "A speedloader of .38 special armor piercing bullets. The iron core increases penetration at the cost of stopping power."
-	icon_state = "38A-7"
+	name = ".38 AP"
+	desc = "A handful of .38 special armor piercing bullets. The iron core increases penetration at the cost of stopping power."
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "38spc-ap"
 	amount_left = 7
 	max_amount = 7
 	ammo_type = new/datum/projectile/bullet/revolver_38/AP
-	icon_dynamic = 1
-	icon_short = "38A"
-	icon_empty = "speedloader_empty"
 
 /obj/item/ammo/bullets/a38/stun
 	sname = ".38 Spc Stun"
 	name = ".38 Stun speedloader"
 	desc = "A speedloader of .38 stun bullets."
-	icon_state = "38S-7"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "38spc-stun"
 	amount_left = 7
 	max_amount = 7
 	ammo_type = new/datum/projectile/bullet/revolver_38/stunners
-	icon_dynamic = 1
-	icon_short = "38S"
-	icon_empty = "speedloader_empty"
 
 //0.393
 /obj/item/ammo/bullets/foamdarts
@@ -662,7 +645,6 @@
 	max_amount = 6
 	ammo_cat = AMMO_FOAMDART
 	ammo_type = new/datum/projectile/bullet/foamdart
-	delete_on_reload = TRUE
 	throwforce = 0
 
 //0.40
@@ -709,17 +691,15 @@
 
 //0.45
 /obj/item/ammo/bullets/c_45
-	sname = "Cold .45"
+	sname = "Colt .45"
 	name = "Colt .45 speedloader"
-	desc = "A speedloader of .45 caliber revolver bullets."
-	icon_state = "38-7"
+	desc = "A handful of .45 caliber revolver bullets."
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "45-colt"
 	amount_left = 7
 	max_amount = 7
 	ammo_type = new/datum/projectile/bullet/revolver_45
 	ammo_cat = AMMO_REVOLVER_45
-	icon_dynamic = 1
-	icon_short = "38"
-	icon_empty = "speedloader_empty"
 
 //0.58
 /obj/item/ammo/bullets/flintlock
@@ -739,17 +719,15 @@
 //0.72
 /obj/item/ammo/bullets/a12
 	sname = "12ga Buckshot"
-	name = "12ga buckshot ammo box"
-	desc = "A box of buckshot shells, capable of tearing through soft tissue."
+	name = "12ga buckshot ammo"
+	desc = "A handful of buckshot shells, capable of tearing through soft tissue."
 	ammo_type = new/datum/projectile/bullet/a12
-	icon_state = "12"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "12ga"
 	amount_left = 8
 	max_amount = 8
 	ammo_cat = AMMO_SHOTGUN_HIGH
-	icon_dynamic = 0
-	icon_empty = "12-0"
 	sound_load = 'sound/weapons/gunload_heavy.ogg'
-
 	weak //for nuke ops engineer
 		ammo_type = new/datum/projectile/bullet/a12/weak
 
@@ -776,7 +754,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	amount_left = 4
 	max_amount = 4
 	ammo_cat = AMMO_SHOTGUN_HIGH
-	delete_on_reload = TRUE
 	sound_load = 'sound/weapons/gunload_heavy.ogg'
 
 /obj/item/ammo/bullets/pipeshot/plasglass // plasmaglass handmade shells
@@ -820,25 +797,22 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	name = "12ga AEX ammo box"
 	desc = "Some really fancy HE shotgun shells. The smallish size limits the explosive potential, but it's nothing to scoff at."
 	ammo_type = new/datum/projectile/bullet/aex
-	icon_state = "AEX"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "12ga-aex"
 	amount_left = 8
 	max_amount = 8
 	ammo_cat = AMMO_SHOTGUN_LOW
-	icon_dynamic = 0
-	icon_empty = "AEX-0"
-	sound_load = 'sound/weapons/gunload_heavy.ogg'
 
 /obj/item/ammo/bullets/abg
 	sname = "12ga Rubber Slug"
 	name = "12ga rubber slugs"
 	desc = "A box of rubber slugs. Despite being nonlethal, they still pack a punch."
 	ammo_type = new/datum/projectile/bullet/abg
-	icon_state = "bg"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "12ga-beanbag"
 	amount_left = 8
 	max_amount = 8
 	ammo_cat = AMMO_SHOTGUN_LOW
-	icon_dynamic = 0
-	icon_empty = "bg-0"
 	sound_load = 'sound/weapons/gunload_click.ogg'
 
 /obj/item/ammo/bullets/abg/two //spawns in the break action
@@ -851,12 +825,10 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	desc = "Some incendiary flares. Ironically enough, they don't burn long enough to be very good at illumination."
 	amount_left = 8
 	max_amount = 8
-	icon_state = "flare"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "12ga-flare"
 	ammo_type = new/datum/projectile/bullet/flare
 	ammo_cat = AMMO_SHOTGUN_LOW
-	icon_dynamic = 0
-	icon_empty = "flare-0"
-
 	single
 		amount_left = 1
 		max_amount = 1
@@ -1051,7 +1023,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	w_class = W_CLASS_NORMAL
 	icon_dynamic = 0
 	icon_empty = "paintballb-4"
-	delete_on_reload = 0 //deleting it before the shell can be fired breaks things
 	sound_load = 'sound/weapons/gunload_40mm.ogg'
 	force_new_current_projectile = 1
 
@@ -1105,7 +1076,7 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 
 	after_unload(mob/user)
 		var/datum/projectile/bullet/grenade_shell/AMMO = src.ammo_type
-		if(AMMO.has_grenade && src.delete_on_reload)
+		if(AMMO.has_grenade)
 			for(var/i in 1 to amount_left)
 				user.put_in_hand_or_drop(SEMI_DEEP_COPY(AMMO.get_nade()))
 			AMMO.unload_nade()
@@ -1124,7 +1095,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	ammo_type = new /datum/projectile/bullet/rpg
 	ammo_cat = AMMO_ROCKET_RPG
 	w_class = W_CLASS_NORMAL
-	delete_on_reload = 1
 	sound_load = 'sound/weapons/gunload_mprt.ogg'
 
 /obj/item/ammo/bullets/mrl
@@ -1136,7 +1106,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	ammo_type = new /datum/projectile/bullet/homing/mrl
 	ammo_cat = AMMO_ROCKET_MRL
 	w_class = W_CLASS_NORMAL
-	delete_on_reload = 1
 	sound_load = 'sound/weapons/gunload_mprt.ogg'
 
 /obj/item/ammo/bullets/antisingularity
@@ -1150,7 +1119,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	ammo_type = new /datum/projectile/bullet/antisingularity
 	ammo_cat = AMMO_ROCKET_SING
 	w_class = W_CLASS_NORMAL
-	delete_on_reload = 1
 	sound_load = 'sound/weapons/gunload_mprt.ogg'
 
 /obj/item/ammo/bullets/mininuke
@@ -1164,7 +1132,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	ammo_type = new /datum/projectile/bullet/mininuke
 	ammo_cat = AMMO_ROCKET_SING
 	w_class = W_CLASS_NORMAL
-	delete_on_reload = 1
 	sound_load = 'sound/weapons/gunload_mprt.ogg'
 
 //2.5
@@ -1179,7 +1146,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	icon_short = "mortar"
 	ammo_cat = AMMO_FLINTLOCK_MORTAR
 	w_class = W_CLASS_NORMAL
-	delete_on_reload = TRUE
 	amount_left = 10
 	max_amount = 10
 
@@ -1201,7 +1167,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	throw_range = 20
 	ammo_type = new /datum/projectile/special/spawner/gun
 	ammo_cat = AMMO_DERRINGER_LITERAL
-	delete_on_reload = 1
 
 //4.6
 /obj/item/ammo/bullets/airzooka
