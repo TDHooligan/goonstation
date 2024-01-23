@@ -25,6 +25,13 @@
 		use(var/amt = 0)
 			return 0
 
+		ammo_left()
+			return 0
+		set_ammo_left(var/amt = 0)
+			return 0
+		add_ammo()
+			return 0
+
 /////////////////////////////// Bullets for kinetic firearms /////////////////////////////////
 
 	// caliber list: update as needed
@@ -74,6 +81,13 @@
 				src.UpdateIcon() // So we get dynamic updates right off the bat. Screw static descs.
 		return
 
+	ammo_left()
+		return src.amount_left
+	set_ammo_left(var/amt)
+		src.amount_left = amt
+	add_ammo(var/amt)
+		src.amount_left += amt
+
 	use(var/amt = 0)
 		if(amount_left >= amt)
 			amount_left -= amt
@@ -83,17 +97,17 @@
 			src.UpdateIcon()
 			return 0
 
-	proc/add_ammo(obj/item/ammo/bullets/otherAmmo, mob/user, magazineCap)
+	proc/merge_ammo(obj/item/ammo/bullets/otherAmmo, mob/user, magazineCap)
 		if(!otherAmmo.type == src.type)
-			return
+			return AMMO_RELOAD_INCOMPATIBLE
 		var/obj/item/ammo/bullets/A = otherAmmo
 		if(A.amount_left<1 )
 			user?.show_text("There's no ammo left in [A.name].", "red")
-			return
+			return AMMO_RELOAD_SOURCE_EMPTY
 		var/limit = magazineCap ? magazineCap : src.max_amount
 		if(src.amount_left>=limit)
 			user?.show_text("[src] is full!", "red")
-			return
+			return AMMO_RELOAD_ALREADY_FULL
 
 		while ((A.amount_left > 0) && (src.amount_left < limit))
 			A.amount_left--
@@ -103,20 +117,20 @@
 			src.UpdateIcon()
 			qdel(A) // No duplicating empty magazines, please (Convair880).
 			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining.</span>")
-			return // Couldn't fully reload the gun.
+			return AMMO_RELOAD_PARTIAL
 		if ((A.amount_left >= 0) && (src.amount_left == limit))
 			A.UpdateIcon()
 			src.UpdateIcon()
 			if (A.amount_left == 0)
 				qdel(A) // No duplicating empty magazines, please (Convair880).
 			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name].</span>")
-			return // Full reload or ammo left over.
+			return AMMO_RELOAD_FULLY
 
 	attackby(obj/b, mob/user)
 		if(istype(b, /obj/item/gun/kinetic) && b:allowReverseReload)
 			b.Attackby(src, user)
 		else if(b.type == src.type)
-			add_ammo(b, user)
+			merge_ammo(b, user)
 		else return ..()
 
 	swap(var/obj/item/ammo/bullets/newBullets, var/obj/item/gun/kinetic/K, var/mob/usr)
@@ -186,7 +200,7 @@
 
 			return AMMO_SWAP_SOURCE_EMPTY
 
-	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr, defer_swap = FALSE)
+	proc/loadammo(var/obj/item/gun/kinetic/K, var/mob/usr)
 		// Also see attackby() in kinetic.dm.
 		if (!K)
 			return 0 // Error message.
@@ -211,8 +225,6 @@
 			K.ammo.amount_left = 0
 		if (src.amount_left < 1)
 			return AMMO_RELOAD_SOURCE_EMPTY // Magazine's empty.
-		if (K.ammo?.amount_left > 0 && defer_swap)
-			return AMMO_RELOAD_ALREADY_FULL
 		if (K.ammo?.amount_left >= K.internal_ammo_capacity)
 			if (K.ammo?.ammo_type.type != src.ammo_type.type)
 				return AMMO_RELOAD_TYPE_SWAP // Call swap().

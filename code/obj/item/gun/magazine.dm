@@ -8,10 +8,10 @@
 	var/max_amount = 1000
 	/// The kind of bullets this starts loaded with
 	var/default_load = /obj/item/ammo/bullets/bullet_9mm
+	/// If defined, how many bullets can be inserted in one action
+	var/load_cap = 0
 	/// The ammo categories this magazine supports.
 	var/ammo_cats
-	/// If enabled, guns will attempt to load into this instead of swapping ammo in the chamber
-	var/supports_mixed_loads = FALSE
 	/// The ammo object. This may contain more than 1 slot's worth of ammo!
 	var/obj/item/ammo/bullets/ammo
 	var/sound_load = 'sound/weapons/gunload_light.ogg'
@@ -71,9 +71,14 @@
 				src.icon_state = src.icon_empty
 		return
 
-	proc/add_ammo(obj/item/ammo/bullets/otherAmmo, mob/user)
+	proc/full()
+		return (ammo_left() >= max_amount)
+
+	/// Adds the specified ammunition to the magazine.
+	/// Returns TRUE if an action was performed.
+	proc/merge_ammo(obj/item/ammo/bullets/otherAmmo, mob/user)
 		if (src.ammo && src.ammo.type == otherAmmo.type)
-			var/result = src.ammo.add_ammo(otherAmmo, user)
+			var/result = src.ammo.merge_ammo(otherAmmo, user)
 			UpdateIcon()
 			return result
 		else
@@ -90,7 +95,7 @@
 	proc/get_ammo_type()
 		return ammo.ammo_type
 
-	proc/ammo_left()
+	ammo_left()
 		return ammo?.amount_left
 
 	/// Pulls a new ammo object from the top of the magazine
@@ -118,7 +123,7 @@
 			K.pull_ammo()
 		else if (K.magic_unswap)
 			if (K.magazine.ammo_left() < K.magazine.max_amount)
-				K.magazine.add_ammo(K.ammo)
+				K.magazine.merge_ammo(K.ammo)
 
 		usr.u_equip(newMag)
 		usr.put_in_hand_or_drop(src)
@@ -195,7 +200,7 @@
 				src.ammo.attackby(b,user)
 				UpdateIcon()
 			else if(loadedAmmo.ammo_cat in ammo_cats)
-				add_ammo(b,user)
+				merge_ammo(b,user)
 				return
 
 	speedloader
@@ -291,32 +296,54 @@
 		ammo_cats = list( AMMO_SHOTGUN_ALL)
 		// FILO mags support mixed loads. it's an interesting area to explore for shotguns. also just an easy test case for the refactor
 		filo
-			supports_mixed_loads = TRUE
 			var/list/obj/item/ammo/bullets/ammos
+			load_cap = 1
 			New()
 				..()
 				ammos = new/list()
-			add_ammo(obj/item/ammo/bullets/otherAmmo, mob/user)
-				var/amount = min(1,min(otherAmmo.amount_left, max_amount-ammo_left()))
-				//Merge ammos if types match
+			merge_ammo(obj/item/ammo/bullets/otherAmmo, mob/user)
+				var/amount = min(load_cap,min(otherAmmo.amount_left, max_amount-ammo_left()))
+				var/success = FALSE
+				if (amount == 0)
+					success = AMMO_RELOAD_ALREADY_FULL
+					return
+				playsound(user.loc, 'sound/weapons/gunload_click.ogg', 50, 1)
+				//Merge ammos if types match, rather than making a new ammo object
 				if (length(ammos) && otherAmmo.type == ammos[length(ammos)].type)
 					otherAmmo.amount_left -= amount
 					ammos[length(ammos)].amount_left += amount
+					if (max_amount == ammo_left())
+						success = AMMO_RELOAD_FULLY
+					else if (load_cap == amount)
+						success = AMMO_RELOAD_PARTIAL_DELIBERATE
+					else
+						success = AMMO_RELOAD_PARTIAL
 				else
+					//If types don't match, and we can fit the whole stack inside the mag
 					if (amount >= otherAmmo.amount_left)
 						ammos += otherAmmo
 						user.u_equip(otherAmmo)
-						otherAmmo.set_loc(src)
+						otherAmmo.set_loc(src) //... simply move the ammo item inside the mag.
+						if (max_amount == ammo_left())
+							success = AMMO_RELOAD_FULLY
+						else if (load_cap == amount)
+							success = AMMO_RELOAD_PARTIAL_DELIBERATE
+						else
+							success = AMMO_RELOAD_PARTIAL
 					else
+						//if ammo types don't match and we need only part of the stack, make a new ammo object
 						var/obj/item/ammo/bullets/newAmmo = new otherAmmo.type(src)
 						newAmmo.amount_left = amount
 						otherAmmo.amount_left -= amount
 						newAmmo.set_loc(src)
 						ammos += newAmmo
+						success = AMMO_RELOAD_FULLY
+
 				if (otherAmmo.amount_left == 0)
 					qdel(otherAmmo)
 				else
 					otherAmmo.UpdateIcon()
+				return success
 
 			// FILO breaks down if you shoot a fraction of a bullet, as this only returns the top shot.
 			// but this is a bizarre use case I don't think has ever had a reason to exist in kinetics.

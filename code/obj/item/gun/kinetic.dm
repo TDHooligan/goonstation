@@ -93,9 +93,9 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 	examine()
 		. = ..()
-		if (src.ammo && (src.ammo?.amount_left > 0))
+		if (src.ammo && (src.ammo?.ammo_left() > 0))
 			var/datum/projectile/ammo_type = src.ammo.ammo_type
-			. += "There are [src.ammo?.amount_left][(ammo_type.material && istype(ammo_type.material, /datum/material/metal/silver)) ? " silver " : " "]bullets of [src.ammo.sname] left!"
+			. += "There are [src.ammo?.ammo_left()][(ammo_type.material && istype(ammo_type.material, /datum/material/metal/silver)) ? " silver " : " "]bullets of [src.ammo.sname] left!"
 		else
 			. += "There are 0 bullets left!"
 		if (current_projectile)
@@ -107,7 +107,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	update_icon()
 
 		if (src.ammo || src.magazine)
-			inventory_counter?.update_number(src.ammo?.amount_left + src.magazine?.ammo_left())
+			inventory_counter?.update_number(src.ammo?.ammo_left() + src.magazine?.ammo_left())
 		else
 			inventory_counter?.update_text("-")
 
@@ -123,7 +123,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				src.icon_state = replacetext(src.icon_state, "-magless", "")
 
 		if(src.has_empty_state)
-			if (src.ammo?.amount_left < 1 && !findtext(src.icon_state, "-empty"))
+			if (src.ammo?.ammo_left() < 1 && !findtext(src.icon_state, "-empty"))
 				iconString += "-empty"
 			else
 				src.icon_state = replacetext(src.icon_state, "-empty", "")
@@ -155,9 +155,9 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	proc/get_ammo()
 		var/ammo = 0
 		if (src.ammo && src.magazine)
-			ammo = src.ammo.amount_left + src.magazine.ammo_left()
+			ammo = src.ammo.ammo_left() + src.magazine.ammo_left()
 		else if (src.ammo)
-			ammo = src.ammo.amount_left
+			ammo = src.ammo.ammo_left()
 		else
 			ammo = src.magazine?.ammo_left()
 		return ammo
@@ -168,12 +168,12 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 		var/obj/item/ammo/bullets/oldAmmo = new src.ammo.type
 		if (use_fake_shell)
 			if(T)
-				for (var/i=1 to src.ammo.amount_left)
+				for (var/i=1 to src.ammo.ammo_left())
 					var/obj/item/fakeCasing = new src.current_projectile.casing(T)
 					fakeCasing.anchored = TRUE // stop the fake casing being picked up
 					dramaticCasings += fakeCasing
-			oldAmmo.amount_left = src.ammo.amount_left
-			src.ammo.amount_left = 0
+			oldAmmo.set_ammo_left(src.ammo.ammo_left())
+			src.ammo.set_ammo_left(0)
 			SPAWN(1 SECONDS)
 				for (var/obj/case in dramaticCasings)
 					qdel(case)
@@ -184,21 +184,23 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	/// Fills up this gun's internal_ammo_capacity using an attached magazine. Like chambering a round.
 	proc/pull_ammo()
 		if (magazine?.ammo_left() > 0 && chambering)
-			if (magazine.ammo?.type == ammo?.type)
+			if (magazine.get_ammo_type() == ammo?.type)
 				//We do this iteratively in case the magazine wants to swap projectile every X bullets.
-				while (magazine.get_ammo_type() == ammo.type && magazine.ammo_left() > 0 && src.ammo.amount_left < internal_ammo_capacity)
+				while (magazine.get_ammo_type() == ammo.type && magazine.ammo_left() > 0 && src.ammo.ammo_left() < internal_ammo_capacity)
 					if (magazine.use(1))
-						src.ammo.amount_left++
+						src.ammo.add_ammo(1)
 			else
 				// mixed ammo chambering is a no no for now. so only pull new ammo objects if we're empty
-				if (!src.ammo || src.ammo.amount_left <= 0)
+				if (!src.ammo || src.ammo.ammo_left() <= 0)
 					src.ammo = magazine.pull_ammo(internal_ammo_capacity) || src.ammo
 
 	/// Ejects chambered cartridges to the floor, then loads from the magazine.
 	proc/rack_slide()
-		if (can_swap_magazine)
+		if (magazine)
+			if (casings_to_eject)
+				src.ejectcasings()
 			var/success = TRUE
-			if (src.ammo?.amount_left > 0)
+			if (src.ammo?.ammo_left() > 0)
 				eject_to_floor(TRUE)
 			playsound(src, 'sound/items/pickup_gun.ogg', 60, 0)
 			src.pull_ammo()
@@ -209,7 +211,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	/// Use <cost> ammo, <shots> times. This queues different projectiles if multiple ammo types are fired.
 	/// Returns the number of shots fired
 	proc/use_ammo(var/cost, var/shots=1)
-		var/ammoLeft = src.ammo?.amount_left
+		var/ammoLeft = src.ammo?.ammo_left()
 		if (!src.ammo)
 			if (!magazine)
 				return 0
@@ -239,7 +241,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 							set_current_projectile(projectile)
 						successes++
 			//...then reload the chamber(s)
-			if (autoloading && src.ammo.amount_left < internal_ammo_capacity && magazine.ammo_left() > 0)
+			if (autoloading && src.ammo.ammo_left() < internal_ammo_capacity && magazine.ammo_left() > 0)
 				src.pull_ammo()
 			return successes
 		else
@@ -284,32 +286,30 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 	attackby(obj/item/ammo/item, mob/user)
 		var/result = 0
+		var/obj/item/ammo/loaded_obj = src
 		var/amountLeft = 0
 		if(istype(item, /obj/item/ammo/bullets))
 			var/obj/item/ammo/bullets/b = item
 			if(ON_COOLDOWN(src, "reload_spam", 2 DECI SECONDS))
 				return
 
-			//If our gun supports mixed loads, don't just replace shells in the chamber
-			if (magazine && open_loading && magazine.supports_mixed_loads)
-				result = b.loadammo(src, usr, TRUE)
-				amountLeft = b.amount_left
-			else
-				result = b.loadammo(src, usr)
-				amountLeft = b.amount_left
+			//Load the magazine first if open_loading
+			if (magazine && open_loading)
+				result = magazine.merge_ammo(item, usr)
+				loaded_obj = magazine
+				amountLeft = b.ammo_left()
 
-			if (magazine && open_loading && amountLeft > 0)
-				if (result == AMMO_RELOAD_ALREADY_FULL)
-					result = magazine.add_ammo(item, usr)
-				else
-					magazine.add_ammo(item)
-				UpdateIcon()
+			if (!result || result == AMMO_RELOAD_ALREADY_FULL)
+				result = b.loadammo(src, usr)
+				amountLeft = b.ammo_left()
+				loaded_obj = src
+			UpdateIcon()
 		else if (istype(item, /obj/item/ammo/magazine))
 			var/obj/item/ammo/magazine/b = item
 			if(ON_COOLDOWN(src, "reload_spam", 2 DECI SECONDS))
 				return
 			result = b.loadammo(src, usr)
-			amountLeft = b.ammo?.amount_left ? b.ammo?.amount_left : 0
+			amountLeft = b.ammo?.ammo_left() ? b.ammo?.ammo_left() : 0
 		else
 			..()
 			return
@@ -324,20 +324,25 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				user.show_text("There's no ammo left in [item.name].", "red")
 				return
 			if(AMMO_RELOAD_ALREADY_FULL)
-				user.show_text("[src] is full!", "red")
+				user.show_text("[loaded_obj] is full!", "red")
 				return
 			if(AMMO_RELOAD_PARTIAL)
-				user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>There wasn't enough ammo left in [item.name] to fully reload [src]. It only has [src.ammo?.amount_left] rounds remaining.</span>")
+				user.visible_message("<span class='alert'>[user] reloads [loaded_obj].</span>", "<span class='alert'>There wasn't enough ammo left in [item.name] to fully reload [loaded_obj]. It only has [loaded_obj.ammo_left()] rounds remaining.</span>")
+				src.tooltip_rebuild = 1
+				src.logme_temp(user, src, item) // Might be useful (Convair880).
+				return
+			if(AMMO_RELOAD_PARTIAL_DELIBERATE)
+				user.visible_message("<span class='alert'>[user] reloads [loaded_obj].</span>", "<span class='alert'>You load [loaded_obj] with ammo from [item.name]. It has [loaded_obj.ammo_left()] rounds remaining.</span>")
 				src.tooltip_rebuild = 1
 				src.logme_temp(user, src, item) // Might be useful (Convair880).
 				return
 			if(AMMO_RELOAD_FULLY)
-				user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You fully reload [src] with ammo from [item.name]. There are [amountLeft] rounds left in [item.name].</span>")
+				user.visible_message("<span class='alert'>[user] reloads [loaded_obj].</span>", "<span class='alert'>You fully reload [loaded_obj] with ammo from [item.name]. There are [amountLeft] rounds left in [item.name].</span>")
 				src.tooltip_rebuild = 1
 				src.logme_temp(user, src, item)
 				return
 			if(AMMO_RELOAD_EMPTY_MAG)
-				user.visible_message("<span class='alert'>[user] reloads [src].</span>", "<span class='alert'>You load [src] with \the [item.name]. There are [amountLeft] rounds left in [item.name].</span>")
+				user.visible_message("<span class='alert'>[user] reloads [loaded_obj].</span>", "<span class='alert'>You load [loaded_obj] with \the [item.name]. There are [amountLeft] rounds left in [item.name].</span>")
 				src.tooltip_rebuild = 1
 				src.logme_temp(user, src, item)
 				return
@@ -346,7 +351,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				if(istype(item, /obj/item/ammo/bullets))
 					var/obj/item/ammo/bullets/b = item
 					result = src.ammo.swap(b, src, usr)
-					amountLeft = b.amount_left
+					amountLeft = b.ammo_left()
 				else if (istype(item, /obj/item/ammo/magazine))
 					var/obj/item/ammo/magazine/b = item
 					result = src.magazine.swap(b, src, usr)
@@ -387,14 +392,14 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				var/turf/T = get_turf(src)
 				if(T)
 					if (src.current_projectile.casing && (src.sanitycheck(1, 0) == 1))
-						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left()))
+						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo?.ammo_left()+src.magazine?.ammo_left()))
 						//DEBUG_MESSAGE("Ejected [number_of_casings] casings from [src].")
 						for (var/i in 1 to number_of_casings)
 							new src.current_projectile.casing(T, src.forensic_ID)
 			else
 				if (src.casings_to_eject < 0)
 					src.casings_to_eject = 0
-				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left())
+				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo?.ammo_left()+src.magazine?.ammo_left())
 		. = ..()
 
 	shoot(var/target, var/start, var/mob/user, var/POX, var/POY)
@@ -403,17 +408,17 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				var/turf/T = get_turf(src)
 				if(T)
 					if (src.current_projectile.casing && (src.sanitycheck(1, 0) == 1))
-						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left()))
+						var/number_of_casings = max(1, min(src.current_projectile.firemode.shot_number, src.ammo?.ammo_left()+src.magazine?.ammo_left()))
 						//DEBUG_MESSAGE("Ejected [number_of_casings] casings from [src].")
 						for (var/i in 1 to number_of_casings)
 							new src.current_projectile.casing(T, src.forensic_ID)
 			else
 				if (src.casings_to_eject < 0)
 					src.casings_to_eject = 0
-				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo?.amount_left+src.magazine?.ammo_left())
+				src.casings_to_eject += min(src.current_projectile.firemode.shot_number, src.ammo?.ammo_left()+src.magazine?.ammo_left())
 
 		if (fire_animation)
-			if(src.ammo?.amount_left >= 1)
+			if(src.ammo?.ammo_left() >= 1)
 				var/flick_state = src.has_fire_anim_state && src.fire_anim_state ? src.fire_anim_state : src.icon_state
 				flick(flick_state, src)
 
@@ -428,7 +433,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			user.put_in_hand_or_drop(src.magazine)
 			if (magic_extract) //automatically move bullets back into mags
 				if (src.magazine.ammo_left() < src.magazine.max_amount)
-					src.magazine.add_ammo(src.ammo)
+					src.magazine.merge_ammo(src.ammo)
 
 			src.magazine.UpdateIcon()
 			src.magazine = null
@@ -436,7 +441,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				src.rack_slide()
 			src.UpdateIcon()
 		else // If we have no removable magazine, eject bullets/casings.
-			if (src.ammo?.amount_left <= 0)
+			if (src.ammo?.ammo_left() <= 0)
 				// The gun may have been fired; eject casings if so.
 				if ((src.casings_to_eject > 0) && src.current_projectile.casing)
 					if (src.sanitycheck(1, 0) == 0)
@@ -454,7 +459,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			src.UpdateIcon()
 			// Make a copy here to avoid item teleportation issues.
 			var/obj/item/ammo/bullets/ammoHand = new src.ammo.type
-			ammoHand.amount_left = src.ammo?.amount_left
+			ammoHand.set_ammo_left(src.ammo?.ammo_left())
 			ammoHand.name = src.ammo.name
 			ammoHand.icon = src.ammo.icon
 			ammoHand.icon_state = src.ammo.icon_state
@@ -468,7 +473,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			src.ejectcasings()
 			src.casings_to_eject = 0
 
-			src.ammo?.amount_left = 0
+			src.ammo?.set_ammo_left(0)
 			src.ammo.refillable = FALSE
 			src.UpdateIcon()
 			src.add_fingerprint(user)
@@ -495,7 +500,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			if (src.casings_to_eject > 0)
 				src.casings_to_eject = 0
 			return 0
-		if (ammo && (src?.internal_ammo_capacity > 200 || src.ammo?.amount_left > 200))
+		if (ammo && (src?.internal_ammo_capacity > 200 || src.ammo?.ammo_left() > 200))
 			logTheThing(LOG_DEBUG, usr, "<b>Convair880</b>: [usr]'s gun ([src]) ran into the magazine cap, aborting.")
 			return 0
 		return 1
@@ -734,7 +739,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	New()
 
 		ammo = new default_ammo
-		ammo.amount_left = 1 // start empty
+		ammo.set_ammo_left(1) // start empty
 		set_current_projectile(new/datum/projectile/bullet/staple)
 		..()
 
@@ -746,7 +751,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 				explosion(src, T,-1,-1,1,2)
 				qdel(src)
 			return
-		if(ammo?.amount_left && current_projectile.power)
+		if(ammo?.ammo_left() && current_projectile.power)
 			failure_chance = clamp(round(current_projectile.power/2 - 9), 0, 33)
 		if(canshoot(user) && prob(failure_chance)) // Empty zip guns had a chance of blowing up. Stupid (Convair880).
 			failured = 1
@@ -1288,7 +1293,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		ammo = new default_ammo
-		ammo.amount_left = 1
+		ammo.set_ammo_left(1)
 		set_current_projectile(new/datum/projectile/bullet/foamdart)
 		..()
 
@@ -1463,7 +1468,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 /obj/item/gun/kinetic/derringer/empty
 	New()
 		..()
-		ammo.amount_left = 0
+		ammo.set_ammo_left(0)
 		UpdateIcon()
 
 //0.45
@@ -1604,16 +1609,22 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		default_magazine = /obj/item/ammo/magazine/riot_12/filo
 		two_handed = FALSE
 		icon_state = "sawnshotty"
+		autoloading = FALSE
+		icon = 'icons/obj/items/gun.dmi'
 		rack(var/atom/movable/user)
 			var/mob/mob_user = null
 			if(ismob(user))
 				mob_user = user
 			if (!src.racked_slide) //Are we racked?
-				if (src.ammo?.amount_left == 0)
+				if (src.ammo?.ammo_left() == 0 && src.magazine.ammo_left() <= 0)
 					boutput(mob_user, "<span class ='notice'>You are out of shells!</span>")
 					UpdateIcon()
 				else
 					src.racked_slide = TRUE
+					if (src.ammo?.ammo_left() > 0)
+						pull_ammo()
+					else
+						rack_slide()
 					if (src.icon_state == "sawnshotty[src.gilded ? "-golden" : ""]") //"animated" racking
 						src.icon_state = "sawnshotty[src.gilded ? "-golden-empty" : "-empty"]" // having UpdateIcon() here breaks
 						animate(src, time = 0.2 SECONDS)
@@ -1622,10 +1633,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 						UpdateIcon() // Slide already open? Just close the slide
 					boutput(mob_user, "<span class='notice'>You rack the slide of the shotgun!</span>")
 					playsound(user.loc, 'sound/weapons/shotgunpump.ogg', 50, 1)
-					if (src.ammo?.amount_left < 8) // Do not eject shells if you're racking a full "clip"
-						var/turf/T = get_turf(src)
-						if (T && src.current_projectile.casing) // Eject shells on rack instead of on shoot()
-							new src.current_projectile.casing(T, src.forensic_ID)
+
+		update_icon()
+			. = ..()
+			src.icon_state = "sawnshotty" + (gilded ? "-golden" : "") + (racked_slide ? "" : "-empty" )
+
 
 	New()
 		magazine = new default_magazine
@@ -1640,20 +1652,20 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		return(..() && src.racked_slide)
 
 	shoot(var/target,var/start ,var/mob/user)
-		if(ammo?.amount_left > 0 && !racked_slide)
+		if(ammo?.ammo_left() > 0 && !racked_slide)
 			boutput(user, "<span class='notice'>You need to rack the slide before you can fire!</span>")
 		..()
 		src.racked_slide = FALSE
-		src.casings_to_eject = src.ammo?.amount_left ? 1 : 0
+		src.casings_to_eject = src.ammo?.ammo_left() ? 1 : 0
 		src.UpdateIcon()
 
 	shoot_point_blank(atom/target, mob/user, second_shot)
-		if(ammo.amount_left > 0 && !racked_slide)
+		if(ammo.ammo_left() > 0 && !racked_slide)
 			boutput(user, "<span class='notice'>You need to rack the slide before you can fire!</span>")
 			return
 		..()
 		src.racked_slide = FALSE
-		src.casings_to_eject = src.ammo?.amount_left ? 1 : 0
+		src.casings_to_eject = src.ammo?.ammo_left() ? 1 : 0
 		src.UpdateIcon()
 
 	attack_self(mob/user as mob)
@@ -1665,11 +1677,12 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		if(ismob(user))
 			mob_user = user
 		if (!src.racked_slide) //Are we racked?
-			if (src.ammo?.amount_left == 0)
+			if (src.ammo?.ammo_left() == 0)
 				boutput(mob_user, "<span class ='notice'>You are out of shells!</span>")
 				UpdateIcon()
 			else
 				src.racked_slide = TRUE
+				rack_slide()
 				if (src.icon_state == "shotty[src.gilded ? "-golden" : ""]") //"animated" racking
 					src.icon_state = "shotty[src.gilded ? "-golden-empty" : "-empty"]" // having UpdateIcon() here breaks
 					animate(src, time = 0.2 SECONDS)
@@ -1679,10 +1692,6 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 				boutput(mob_user, "<span class='notice'>You rack the slide of the shotgun!</span>")
 				playsound(user.loc, 'sound/weapons/shotgunpump.ogg', 50, 1)
 				src.casings_to_eject = 0
-				if (src.ammo?.amount_left < 8) // Do not eject shells if you're racking a full "clip"
-					var/turf/T = get_turf(src)
-					if (T && src.current_projectile.casing) // Eject shells on rack instead of on shoot()
-						new src.current_projectile.casing(T, src.forensic_ID)
 
 /obj/item/gun/kinetic/single_action/mts_255
 	name = "\improper MTs-255 Revolver Shotgun"
@@ -1753,7 +1762,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	New()
 		set_current_projectile(new/datum/projectile/bullet/a12)
 		ammo = new /obj/item/ammo/bullets/a12
-		ammo.amount_left = 0 // Spawn empty.
+		ammo.set_ammo_left(0) // Spawn empty.
 		..()
 
 	attack_self(mob/user as mob)
@@ -1761,7 +1770,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 			if(user.updateTwoHanded(src, FALSE)) // should never fail, but respect error codes
 				w_class = W_CLASS_NORMAL
 				force = MELEE_DMG_REVOLVER
-				if (src.ammo?.amount_left > 0 || src.casings_to_eject > 0)
+				if (src.ammo?.ammo_left() > 0 || src.casings_to_eject > 0)
 					src.icon_state = "slamgun-open-loaded"
 				else
 					src.icon_state = "slamgun-open"
@@ -1795,7 +1804,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 			src.item_state = "slamgun-ready-world"
 		else
 			src.item_state = "slamgun-open-world"
-			if (src.ammo?.amount_left > 0 || src.casings_to_eject > 0)
+			if (src.ammo?.ammo_left() > 0 || src.casings_to_eject > 0)
 				src.icon_state = "slamgun-open-loaded"
 			else
 				src.icon_state = "slamgun-open"
@@ -1813,7 +1822,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		if (istype(b, /obj/item/ammo/bullets) && src.icon_state == "slamgun-ready")
 			boutput(user, "<span class='alert'>You can't shove shells down the barrel! You'll have to open \the [src]!</span>")
 			return
-		if (istype(b, /obj/item/ammo/bullets) && (src.ammo?.amount_left > 0 || src.casings_to_eject > 0))
+		if (istype(b, /obj/item/ammo/bullets) && (src.ammo?.ammo_left() > 0 || src.casings_to_eject > 0))
 			boutput(user, "<span class='alert'>\The [src] already has a shell inside! You'll have to unload \the [src]!</span>")
 			return
 		..()
@@ -1885,7 +1894,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	attackby(obj/item/b, mob/user)
 		if (istype(b, /obj/item/chem_grenade) || istype(b, /obj/item/old_grenade))
-			if(src.ammo?.amount_left > 0)
+			if(src.ammo?.ammo_left() > 0)
 				boutput(user, "<span class='alert'>The [src] already has something in it! You can't use the conversion chamber right now! You'll have to manually unload the [src]!</span>")
 				return
 			else
@@ -1937,13 +1946,13 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
 		ammo = new default_ammo
-		ammo.amount_left = 0 // Spawn empty.
+		ammo.set_ammo_left(0) // Spawn empty.
 		set_current_projectile(new /datum/projectile/bullet/rpg)
 		..()
 
 	update_icon()
 		..()
-		if (src.ammo?.amount_left < 1)
+		if (src.ammo?.ammo_left() < 1)
 			src.item_state = "rpg7_empty"
 		else
 			src.item_state = "rpg7"
@@ -1958,7 +1967,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	loaded
 		New()
 			..()
-			ammo.amount_left = 1
+			ammo.set_ammo_left(1)
 			src.UpdateIcon()
 			return
 
@@ -1989,7 +1998,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
 		ammo = new default_ammo
-		ammo.amount_left = 0 // Spawn empty.
+		ammo.set_ammo_left(0) // Spawn empty.
 		set_current_projectile(new /datum/projectile/bullet/homing/mrl)
 		..()
 
@@ -2000,7 +2009,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	loaded
 		New()
 			..()
-			ammo.amount_left = 6
+			ammo.set_ammo_left(6)
 			UpdateIcon()
 			return
 
@@ -2026,7 +2035,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		ammo = new default_ammo
-		ammo.amount_left = 0 // Spawn empty.
+		ammo.set_ammo_left(0) // Spawn empty.
 		set_current_projectile(new /datum/projectile/bullet/antisingularity)
 		..()
 		return
@@ -2064,7 +2073,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		ammo = new default_ammo
-		ammo.amount_left = 6 //spawn full please
+		ammo.set_ammo_left(6) //spawn full please
 		set_current_projectile(new /datum/projectile/special/spawner/gun)
 		..()
 
@@ -2111,8 +2120,8 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		..()
 
 	afterattack(atom/A, mob/user as mob)
-		if(src.ammo?.amount_left < internal_ammo_capacity && istype(A, /mob/living/critter/small_animal/cat))
-			src.ammo?.amount_left += 1
+		if(src.ammo?.ammo_left() < internal_ammo_capacity && istype(A, /mob/living/critter/small_animal/cat))
+			src.ammo?.add_ammo(1)
 			user.visible_message("<span class='alert'>[user] loads \the [A] into \the [src].</span>", "<span class='alert'>You load \the [A] into \the [src].</span>")
 			src.current_projectile.icon_state = A.icon_state //match the cat sprite that we load
 			qdel(A)
@@ -2159,7 +2168,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		..()
-		magazine.ammo.amount_left = 0
+		magazine.ammo.set_ammo_left(0)
 		UpdateIcon()
 
 /obj/item/gun/kinetic/pistol/smart/mkII
@@ -2227,7 +2236,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 
 	New()
 		..()
-		ammo.amount_left = 0
+		ammo.set_ammo_left(0)
 		UpdateIcon()
 
 /obj/item/gun/kinetic/tranq_pistol
@@ -2479,18 +2488,18 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	New()
 		START_TRACKING_CAT(TR_CAT_NUKE_OP_STYLE)
 		ammo = new default_ammo
-		ammo.amount_left = internal_ammo_capacity
+		ammo.set_ammo_left(internal_ammo_capacity)
 		set_current_projectile(new/datum/projectile/bullet/grenade_round/explosive)
 		..()
 
 	attackby(obj/item/b, mob/user)
 		if (istype(b, /obj/item/chem_grenade) || istype(b, /obj/item/old_grenade))
-			if((src.ammo?.amount_left > 0 && !istype(current_projectile, /datum/projectile/bullet/grenade_shell)) || src.ammo?.amount_left >= src.internal_ammo_capacity)
+			if((src.ammo?.ammo_left() > 0 && !istype(current_projectile, /datum/projectile/bullet/grenade_shell)) || src.ammo?.ammo_left() >= src.internal_ammo_capacity)
 				boutput(user, "<span class='alert'>The [src] already has something in it! You can't use the conversion chamber right now! You'll have to manually unload the [src]!</span>")
 				return
 			else
 				var/datum/projectile/bullet/grenade_shell/custom_shell = src.current_projectile
-				if(src.ammo?.amount_left > 0 && istype(custom_shell) && custom_shell.get_nade().type != b.type)
+				if(src.ammo?.ammo_left() > 0 && istype(custom_shell) && custom_shell.get_nade().type != b.type)
 					boutput(user, "<span class='alert'>The [src] has a different kind of grenade in the conversion chamber, and refuses to mix and match!</span>")
 					return
 				else
@@ -2686,7 +2695,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	shoot(target, start, mob/user)
 		if (src.broke_open)
 			boutput(user, "<span class='alert'>You need to close [src] before you can fire!</span>")
-		if (!src.broke_open && src.ammo?.amount_left > 0)
+		if (!src.broke_open && src.ammo?.ammo_left() > 0)
 			src.shells_to_eject++
 		..()
 
