@@ -109,28 +109,22 @@
 			user?.show_text("[src] is full!", "red")
 			return AMMO_RELOAD_ALREADY_FULL
 
-		while ((A.amount_left > 0) && (src.amount_left < limit))
-			A.amount_left--
-			src.amount_left++
-		if ((A.amount_left < 1) && (src.amount_left < limit))
-			A.UpdateIcon()
-			src.UpdateIcon()
-			qdel(A) // No duplicating empty magazines, please (Convair880).
-			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining.</span>")
-			return AMMO_RELOAD_PARTIAL
-		if ((A.amount_left >= 0) && (src.amount_left == limit))
-			A.UpdateIcon()
-			src.UpdateIcon()
-			if (A.amount_left == 0)
-				qdel(A) // No duplicating empty magazines, please (Convair880).
-			user?.visible_message("<span class='alert'>[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name].</span>")
-			return AMMO_RELOAD_FULLY
-
-	attackby(obj/b, mob/user)
-		if(istype(b, /obj/item/gun/kinetic) && b:allowReverseReload)
-			b.Attackby(src, user)
-		else if(b.type == src.type)
-			merge_ammo(b, user)
+			while ((A.amount_left > 0) && (src.amount_left < src.max_amount))
+				A.amount_left--
+				src.amount_left++
+			if ((A.amount_left < 1) && (src.amount_left < src.max_amount))
+				A.UpdateIcon()
+				src.UpdateIcon()
+				qdel(A) 
+				user.visible_message(SPAN_ALERT("[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining."))
+				return // Couldn't fully reload the gun.
+			if ((A.amount_left >= 0) && (src.amount_left == src.max_amount))
+				A.UpdateIcon()
+				src.UpdateIcon()
+				if (A.amount_left == 0)
+					qdel(A)
+				user.visible_message(SPAN_ALERT("[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name]."))
+				return // Full reload or ammo left over.
 		else return ..()
 
 	swap(var/obj/item/ammo/bullets/newBullets, var/obj/item/gun/kinetic/K, var/mob/usr)
@@ -219,7 +213,7 @@
 		if(K.sound_load_override)
 			playsound(K, K.sound_load_override, 50, 1)
 		else
-			playsound(K, sound_load, 50, 1)
+			playsound(K, sound_load, 50, TRUE)
 
 		if (K.ammo?.amount_left < 0)
 			K.ammo.amount_left = 0
@@ -465,7 +459,7 @@
 
 	New()
 		..()
-		src.update_icon()
+		src.UpdateIcon()
 
 	update_icon()
 		..()
@@ -529,9 +523,8 @@
 /obj/item/ammo/bullets/bullet_9mm
 	sname = "9×19mm Parabellum"
 	name = "9mm magazine"
-	desc = "A handful of 9x19mm rounds, an intermediate pistol cartridge."
-	icon = 'icons/obj/items/bullets.dmi'
-	icon_state = "9mm"
+	desc = "A handgun magazine full of 9x19mm rounds, an intermediate pistol cartridge."
+	icon_state = "branwen_magazine"
 	amount_left = 15
 	max_amount = 15
 	ammo_type = new/datum/projectile/bullet/bullet_9mm
@@ -992,7 +985,7 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 
 /obj/item/ammo/bullets/stunbaton
 	sname = "40mm Stun Baton Rounds"
-	name = "40mm plastic baton rounds"
+	name = "40mm stun-baton rounds"
 	desc = "A box of disposable stun batons shoved into 40mm grenade shells. What the hell?"
 	ammo_type = new/datum/projectile/bullet/stunbaton
 	amount_left = 2
@@ -1058,7 +1051,7 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 				src.amount_left++
 				boutput(user, "You load [W] into the [src].")
 			else
-				boutput(user, "<span class='alert'>For <i>some reason</i>, you are unable to place [W] into an already filled chamber.</span>")
+				boutput(user, SPAN_ALERT("For <i>some reason</i>, you are unable to place [W] into an already filled chamber."))
 				return
 		else
 			return ..()
@@ -1107,6 +1100,20 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	ammo_type = new /datum/projectile/bullet/rpg
 	ammo_cat = AMMO_ROCKET_RPG
 	w_class = W_CLASS_NORMAL
+	sound_load = 'sound/weapons/gunload_mprt.ogg'
+
+/obj/item/ammo/bullets/pod_seeking_missile
+	sname = "pod-seeking missile"
+	name = "pod-seeking missile"
+	desc = "A high-explosive missile, equipped with pod-seeking guidance systems."
+	amount_left = 1
+	max_amount = 1
+	icon = 'icons/obj/projectiles.dmi'
+	icon_state = "pod_seeking_missile"
+	ammo_type = new /datum/projectile/bullet/homing/pod_seeking_missile
+	ammo_cat = AMMO_ROCKET_RPG
+	w_class = W_CLASS_NORMAL
+	delete_on_reload = TRUE
 	sound_load = 'sound/weapons/gunload_mprt.ogg'
 
 /obj/item/ammo/bullets/mrl
@@ -1185,7 +1192,7 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	name = "Airzooka Tactical Replacement Trashbag"
 	sname = "air"
 	desc = "A tactical trashbag for use in a Donk Co Airzooka."
-	icon = 'icons/obj/clothing/uniforms/item_js_gimmick.dmi'
+	icon = 'icons/obj/janitor.dmi'
 	icon_state = "trashbag"
 	m_amt = 40000
 	g_amt = 0
@@ -1198,7 +1205,7 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	name = "Airzooka Tactical Replacement Trashbag: Xtreme Edition"
 	sname = "air"
 	desc = "A tactical trashbag for use in a Donk Co Airzooka, now with plasma lining."
-	icon = 'icons/obj/clothing/uniforms/item_js_gimmick.dmi'
+	icon = 'icons/obj/janitor.dmi'
 	icon_state = "biobag"
 	m_amt = 40000
 	g_amt = 0
@@ -1380,14 +1387,14 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 
 /obj/item/ammo/power_cell/self_charging
 	name = "Power Cell - Atomic"
-	desc = "A self-contained radioisotope power cell that slowly recharges an internal capacitor. Holds 40PU."
+	desc = "A self-contained radioisotope power cell that slowly recharges an internal capacitor. Holds 60PU."
 	icon = 'icons/obj/items/ammo.dmi'
 	icon_state = "recharger_cell"
 	m_amt = 18000
 	g_amt = 38000
-	charge = 40
-	max_charge = 40
-	recharge_rate = 5
+	charge = 60
+	max_charge = 60
+	recharge_rate = 2.5
 
 
 /obj/item/ammo/power_cell/self_charging/custom
@@ -1426,8 +1433,8 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 
 /obj/item/ammo/power_cell/self_charging/slowcharge
 	name = "Power Cell - Atomic Slowcharge"
-	desc = "A self-contained radioisotope power cell that very slowly recharges an internal capacitor. Holds 40PU."
-	recharge_rate = 1.5 // cogwerks: raised from 1.0 because radbows were terrible!!!!!
+	desc = "A self-contained radioisotope power cell that very slowly recharges an internal capacitor. Holds 60PU."
+	recharge_rate = 2 // cogwerks: raised from 1.0 because radbows were terrible!!!!!
 
 /obj/item/ammo/power_cell/self_charging/disruptor
 	name = "Power Cell - Disruptor Charger"
@@ -1503,6 +1510,7 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 
 /obj/item/ammo/power_cell/self_charging/lawbringer/bad
 	desc = "A self-contained radioisotope power cell that slowly recharges an internal capacitor. Holds 175PU."
+	charge = 175
 	max_charge = 175
 	recharge_rate = 3
 
@@ -1515,46 +1523,10 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 /obj/item/ammo/power_cell/self_charging/flockdrone
 	name = "Flockdrone incapacitor cell"
 	desc = "You should not be seeing this!"
+	charge = 40
 	max_charge = 40
 	recharge_rate = 5
 	component_type = /datum/component/power_cell/flockdrone
-
-/datum/action/bar/icon/powercellswap
-	duration = 1 SECOND
-	interrupt_flags = INTERRUPT_STUNNED | INTERRUPT_ATTACKED
-	id = "powercellswap"
-	icon = 'icons/obj/items/ammo.dmi'
-	icon_state = "power_cell"
-	var/mob/living/user
-	var/obj/item/ammo/power_cell/cell
-	var/obj/item/gun/energy/gun
-
-	New(User, Cell, Gun)
-		user = User
-		cell = Cell
-		gun = Gun
-		..()
-
-	onUpdate()
-		..()
-		if(BOUNDS_DIST(user, gun) > 0 || user == null || cell == null || gun == null || get_turf(gun) != get_turf(cell) )
-			interrupt(INTERRUPT_ALWAYS)
-			return
-
-	onStart()
-		..()
-		if(BOUNDS_DIST(user, gun) > 0 || user == null || cell == null || gun == null || get_turf(gun) != get_turf(cell) )
-			interrupt(INTERRUPT_ALWAYS)
-			return
-		return
-
-	onEnd()
-		..()
-		if(BOUNDS_DIST(user, gun) > 0 || user == null || cell == null || gun == null || get_turf(gun) != get_turf(cell) )
-			..()
-			interrupt(INTERRUPT_ALWAYS)
-			return
-		cell.swap(gun,user)
 
 /obj/item/ammo/power_cell/redirect
 	component_type = /datum/component/power_cell/redirect
