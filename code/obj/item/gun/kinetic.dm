@@ -18,6 +18,9 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 	var/can_swap_magazine = FALSE
 	/// Has this gun got a magless sprite?
 	var/has_magless_state = FALSE
+	/// Animation to play when inserting ammo/magazine
+	var/loading_anim = FALSE
+	var/image/loading_image
 	/// Can this gun shoot less than a full burst?
 	var/can_shoot_partially = TRUE
 	/// What ammo cats does this accept? Can be a list too. The .357 Mag revolver can also chamber .38 Spc rounds, for instance (Convair880).
@@ -129,6 +132,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				src.icon_state = replacetext(src.icon_state, "-empty", "")
 
 		src.icon_state = "[src.icon_state][iconString]"
+		update_loading_overlay()
 		return 0
 
 	canshoot(mob/user)
@@ -146,11 +150,19 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			bullet_queue -= bullet_queue[1]
 		return
 
-	/// This is how you choose firemode, instead of ammo types.
-	/// Ammotypes still have a default_firemode that this should override if it cares.
+	/// This is how you alter the default firemode for your projectile.
+	/// override_firemode will handle if shot_number is too high etc.
 	alter_firemode(var/datum/firemode/F)
 		F.shot_number = 25
 		return
+
+	proc/update_loading_overlay()
+		var/list/ret = list()
+		if (src.loading_anim && !src.loading_image)
+			src.loading_image = image(src.icon)
+			src.loading_image.appearance_flags = PIXEL_SCALE | RESET_COLOR | RESET_ALPHA
+			src.loading_image.icon_state = src.loading_anim
+			src.UpdateOverlays(src.loading_image, "loading")
 
 	proc/get_ammo()
 		var/ammo = 0
@@ -298,7 +310,8 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				result = magazine.merge_ammo(item, usr)
 				loaded_obj = magazine
 				amountLeft = b.ammo_left()
-
+				if (result == AMMO_RELOAD_PARTIAL || AMMO_RELOAD_FULLY && loading_anim)
+					flick(loading_anim, src.loading_image)
 			if (!result || result == AMMO_RELOAD_ALREADY_FULL)
 				result = b.loadammo(src, usr)
 				amountLeft = b.ammo_left()
@@ -1633,7 +1646,8 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		two_handed = FALSE
 		icon_state = "sawnshotty"
 		autoloading = FALSE
-		icon = 'icons/obj/items/gun.dmi'
+		loading_anim = "sawnshotty-load"
+		icon = 'icons/obj/items/guns/kinetic.dmi'
 		rack(var/atom/movable/user)
 			var/mob/mob_user = null
 			if(ismob(user))
@@ -1953,7 +1967,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	force = MELEE_DMG_LARGE
 	contraband = 8
 	ammo_cats = list(AMMO_ROCKET_ALL)
-	max_ammo_capacity = 1
+	internal_ammo_capacity = 1
 	can_dual_wield = FALSE
 	two_handed = TRUE
 	muzzle_flash = "muzzle_flash_launch"
@@ -2337,7 +2351,7 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	internal_ammo_capacity = 1
 	auto_eject = 1
 	spread_angle = 10
-	has_empty_state = 1
+	has_magless_state = 1
 	can_swap_magazine = TRUE
 	has_magless_state = TRUE
 	default_ammo = /obj/item/ammo/bullets/bullet_9mm/smg

@@ -97,7 +97,7 @@
 					SPAWN(0)
 						for(var/i in 1 to src.current_projectile.firemode.shot_number) //loop animation until finished
 							muzzle_flash_any(src, get_angle(src, src.target), "muzzle_flash")
-							sleep(src.current_projectile.firemode.shoot_delay)
+							sleep(src.current_projectile.firemode.shot_delay)
 					shoot_projectile_ST_pixel_spread(src, current_projectile, target, 0, 0 , spread)
 
 	sapper_power()

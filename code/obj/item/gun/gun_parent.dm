@@ -82,6 +82,9 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 /obj/item/gun/proc/override_firemode() // override projectile firemodes
 	return
 
+/obj/item/gun/proc/alter_firemode(var/datum/firemode/F)
+	return
+
 ///CHECK_LOCK
 ///Call to run a weaponlock check vs the users implant
 ///Return 0 for fail
@@ -308,7 +311,7 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 				L.lastgasp()
 			L.set_clothing_icon_dirty()
 		src.UpdateIcon()
-		sleep(FM.shoot_delay)
+		sleep(FM.shot_delay)
 
 /obj/item/gun/afterattack(atom/target as mob|obj|turf|area, mob/user as mob, flag)
 	src.add_fingerprint(user)

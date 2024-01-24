@@ -184,7 +184,7 @@ ABSTRACT_TYPE(/obj/deployable_turret)
 		current_projectile = new projectile_type
 		current_projectile.default_firemode = new/datum/firemode()
 		current_projectile.firemode.shot_number = burst_size
-		current_projectile.firemode.shoot_delay = 10/fire_rate
+		current_projectile.firemode.shot_delay = 10/fire_rate
 
 	proc/process()
 		if(src.active)
@@ -200,7 +200,7 @@ ABSTRACT_TYPE(/obj/deployable_turret)
 						for(var/i in 1 to src.current_projectile.firemode.shot_number) //loop animation until finished
 							flick("[src.icon_tag]_fire",src)
 							muzzle_flash_any(src, 0, "muzzle_flash")
-							sleep(src.current_projectile.firemode.shoot_delay)
+							sleep(src.current_projectile.firemode.shot_delay)
 					shoot_projectile_ST_pixel_spread(src, current_projectile, target, 0, 0 , spread)
 
 

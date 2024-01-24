@@ -51,7 +51,7 @@
 		ammo.set_loc(src)
 		ammo.max_amount = max_amount
 		ammo.amount_left = start_amount
-		inventory_counter?.update_number(src.ammo?.amount_left)
+		inventory_counter?.update_number(ammo_left())
 		..()
 
 
@@ -255,6 +255,7 @@
 						result = new ammo_2.type()
 					result.amount_left = 1
 					ammo_left--
+					UpdateIcon()
 					return result
 
 			use(var/amt = 0)

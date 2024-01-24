@@ -109,23 +109,23 @@
 			user?.show_text("[src] is full!", "red")
 			return AMMO_RELOAD_ALREADY_FULL
 
-			while ((A.amount_left > 0) && (src.amount_left < src.max_amount))
-				A.amount_left--
-				src.amount_left++
-			if ((A.amount_left < 1) && (src.amount_left < src.max_amount))
-				A.UpdateIcon()
-				src.UpdateIcon()
-				qdel(A) 
-				user.visible_message(SPAN_ALERT("[user] refills [src].</span>", "<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining."))
-				return // Couldn't fully reload the gun.
-			if ((A.amount_left >= 0) && (src.amount_left == src.max_amount))
-				A.UpdateIcon()
-				src.UpdateIcon()
-				if (A.amount_left == 0)
-					qdel(A)
-				user.visible_message(SPAN_ALERT("[user] refills [src].</span>", "<span class='alert'>You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name]."))
-				return // Full reload or ammo left over.
-		else return ..()
+		while ((A.amount_left > 0) && (src.amount_left < src.max_amount))
+			A.amount_left--
+			src.amount_left++
+		if ((A.amount_left < 1) && (src.amount_left < src.max_amount))
+			A.UpdateIcon()
+			src.UpdateIcon()
+			qdel(A)
+			user?.visible_message(SPAN_ALERT("[user] refills [src]."), SPAN_ALERT("<span class='alert'>There wasn't enough ammo left in [A.name] to fully refill [src]. It only has [src.amount_left] rounds remaining."))
+			return // Couldn't fully reload the gun.
+		if ((A.amount_left >= 0) && (src.amount_left == src.max_amount))
+			A.UpdateIcon()
+			src.UpdateIcon()
+			if (A.amount_left == 0)
+				qdel(A)
+			user?.visible_message(SPAN_ALERT("[user] refills [src]."), SPAN_ALERT("You fully refill [src] with ammo from [A.name]. There are [A.amount_left] rounds left in [A.name]."))
+			return // Full reload or ammo left over.
+
 
 	swap(var/obj/item/ammo/bullets/newBullets, var/obj/item/gun/kinetic/K, var/mob/usr)
 		// I tweaked this for improved user feedback and to support zip guns (Convair880).
@@ -524,7 +524,8 @@
 	sname = "9×19mm Parabellum"
 	name = "9mm magazine"
 	desc = "A handgun magazine full of 9x19mm rounds, an intermediate pistol cartridge."
-	icon_state = "branwen_magazine"
+	icon = 'icons/obj/items/bullets.dmi'
+	icon_state = "9mm"
 	amount_left = 15
 	max_amount = 15
 	ammo_type = new/datum/projectile/bullet/bullet_9mm
@@ -1113,7 +1114,6 @@ ABSTRACT_TYPE(/obj/item/ammo/bullets/pipeshot)
 	ammo_type = new /datum/projectile/bullet/homing/pod_seeking_missile
 	ammo_cat = AMMO_ROCKET_RPG
 	w_class = W_CLASS_NORMAL
-	delete_on_reload = TRUE
 	sound_load = 'sound/weapons/gunload_mprt.ogg'
 
 /obj/item/ammo/bullets/mrl

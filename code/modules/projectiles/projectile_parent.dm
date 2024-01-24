@@ -574,6 +574,8 @@ ABSTRACT_TYPE(/datum/projectile)
 	var/zone = null              // todo: if fired from a handheld gun, check the targeted zone --- this should be in the goddamn obj
 
 	var/datum/material/material = null
+	var/datum/firemode/firemode
+	var/datum/firemode/default_firemode = /datum/firemode/single //Sets the number of bullets fired & delay
 
 	var/casing = null
 	var/reagent_payload = null
@@ -618,6 +620,7 @@ ABSTRACT_TYPE(/datum/projectile)
 
 	New()
 		. = ..()
+		firemode = new default_firemode()
 		generate_stats()
 
 	onVarChanged(variable, oldval, newval)
@@ -698,7 +701,7 @@ ABSTRACT_TYPE(/datum/projectile)
 /proc/hit_with_projectile(var/S, var/datum/projectile/DATA, var/atom/T)
 	if (!S || !T)
 		return
-	var/times = max(1, DATA.shot_number)
+	var/times = max(1, DATA.firemode.shot_number)
 	for (var/i = 1, i <= times, i++)
 		var/obj/projectile/P = initialize_projectile_pixel_spread(S, DATA, T)
 		if (S == T)
@@ -720,26 +723,27 @@ ABSTRACT_TYPE(/datum/projectile)
 			P.proj_data.on_pointblank(P, T)
 	P.collide(T) // The other immunity check is in there (Convair880).
 
-/proc/shoot_projectile_DIR(var/atom/movable/S, var/datum/projectile/DATA, var/dir, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null)
+/proc/shoot_projectile_DIR(var/atom/movable/S, var/datum/projectile/DATA, var/dir, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null, var/datum/firemode/firemode_override = null)
 	if (!S)
 		return
 	if (!isturf(S) && !isturf(S.loc))
 		return null
 	var/turf/T = get_step(get_turf(S), dir)
 	if (T)
-		return shoot_projectile_ST_pixel_spread(S, DATA, T, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
+		return shoot_projectile_ST_pixel_spread(S, DATA, T, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source, firemode_override = firemode_override)
 	return null
 
-/proc/shoot_projectile_ST_pixel_spread(var/atom/movable/S, var/datum/projectile/DATA, var/T, var/pox, var/poy, var/spread_angle, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null)
+/proc/shoot_projectile_ST_pixel_spread(var/atom/movable/S, var/datum/projectile/DATA, var/T, var/pox, var/poy, var/spread_angle, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null, var/datum/firemode/firemode_override = null)
 	if (!S)
 		return
 	if (!isturf(S) && !isturf(S.loc))
 		return null
 	var/obj/projectile/Q = shoot_projectile_relay_pixel_spread(S, DATA, T, pox, poy, spread_angle, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
-	if (DATA.shot_number > 1)
+	var/datum/firemode/FM = firemode_override || DATA.firemode
+	if (FM.shot_number > 1)
 		SPAWN(-1)
-			for (var/i = 2, i <= DATA.shot_number, i++)
-				sleep(DATA.shot_delay)
+			for (var/i = 2, i <= FM.shot_number, i++)
+				sleep(FM.shot_delay)
 				shoot_projectile_relay_pixel_spread(S, DATA, T, pox, poy, spread_angle, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
 	return Q
 
