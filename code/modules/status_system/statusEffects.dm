@@ -1277,8 +1277,8 @@
 		maxDuration = null
 		effect_quality = STATUS_QUALITY_POSITIVE
 		var/const/max_health = 30
-		var/const/max_stam = 60
-		var/const/regen_stam = 5
+		var/const/max_stam = 25
+		var/const/regen_stam = 3
 		var/mob/living/carbon/human/H
 		var/datum/gang/gang
 		var/on_turf = 0
