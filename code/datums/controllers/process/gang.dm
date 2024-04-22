@@ -112,13 +112,19 @@
 			return
 		var/turf/location = pick(turfList)
 		var/datum/client_image_group/imgroup = get_image_group(CLIENT_IMAGE_GROUP_GANG_OBJECTIVES)
-		var/obj/effects/gang_crate_indicator/indicator = new(location)
-		var/image/objective_image = image('icons/effects/gang_overlays.dmi', indicator, "cratedrop")
-		objective_image.plane = PLANE_WALL
-		objective_image.alpha = 180
-		imgroup.add_image(objective_image)
-		broadcast_to_all_gangs("<span style='font-size:24px'> We're dropping off weapons & ammunition at <b>\the [drop_zone.name]!</b> It'll arrive in [GANG_CRATE_DROP_TIME/(1 MINUTE)] minute[s_es(GANG_CRATE_DROP_TIME/(1 MINUTE))] so get fortifying!</span>")
+		var/obj/effects/gang_crate_indicator/indicator
+		var/image/objective_image
+		broadcast_to_all_gangs("<span style='font-size:24px'> We're dropping off weapons & ammunition, so get ready. The location will be revealed in [(GANG_CRATE_DROP_TIME-2 MINUTES)/(1 MINUTE)] minute[s_es((GANG_CRATE_DROP_TIME-2 MINUTES)/(1 MINUTE))]!</span>")
 
+		SPAWN(GANG_CRATE_DROP_TIME - 2 MINUTES)
+			if(drop_zone != null)
+				indicator = new(location)
+				objective_image = image('icons/effects/gang_overlays.dmi', indicator, "cratedrop")
+				objective_image.plane = PLANE_WALL
+				objective_image.alpha = 180
+				imgroup.add_image(objective_image)
+				broadcast_to_all_gangs("<span style='font-size:24px'> The weapons crate will arrive at the <b>[drop_zone.name]</b> in 2 minutes!</span>")
+				logTheThing(LOG_GAMEMODE, src, "The crate in [drop_zone.name] is known to gang members. Location: [location.x],[location.y].")
 
 		SPAWN(GANG_CRATE_DROP_TIME - 30 SECONDS)
 			if(drop_zone != null)
