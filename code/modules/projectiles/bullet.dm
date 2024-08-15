@@ -2218,3 +2218,40 @@ datum/projectile/bullet/autocannon
 	impact_image_state = "bullethole-small"
 	casing = /obj/item/casing/medium
 	ricochets = TRUE
+
+//30-06
+/datum/projectile/bullet/garand
+	name = "bullet"
+	icon_state = "buckshot"
+	shot_sound = 'sound/weapons/shotgunshot.ogg'
+	damage = 70
+	dissipation_delay = 2//2
+	dissipation_rate = 10
+	damage_type = D_KINETIC
+	hit_type = DAMAGE_BLUNT
+	impact_image_state = "bullethole"
+	hit_ground_chance = 100
+	implanted = /obj/item/implant/projectile/bullet_garand
+	casing = /obj/item/casing/rifle
+
+	on_hit(atom/hit, dirflag, obj/projectile/proj)
+		if (ishuman(hit))
+			var/mob/living/carbon/human/M = hit
+			if(proj.power >= 30)
+				M.do_disorient(75, knockdown = 50, stunned = 50, disorient = 30, remove_stamina_below_zero = 0)
+
+			if(proj.power >= 40)
+				var/throw_range = (proj.power > 50) ? 6 : 3
+				var/turf/target = get_edge_target_turf(M, dirflag)
+				M.throw_at(target, throw_range, 1, throw_type = THROW_GUNIMPACT)
+				M.update_canmove()
+			if (M.organHolder)
+				var/targetorgan
+				for (var/i in 1 to (power/10)-2) //targets 5 organs for strong, 3 for weak
+					targetorgan = pick("left_lung", "right_lung", "left_kidney", "right_kidney", "liver", "stomach", "intestines", "spleen", "pancreas", "appendix", "tail")
+					M.organHolder.damage_organ(proj.power/M.get_ranged_protection(), 0, 0, prob(5) ? "heart" : targetorgan) //5% chance to hit the heart
+
+			if(prob(proj.power/4) && power > 50) //only for strong. Lowish chance
+				M.sever_limb(pick("l_arm","r_arm","l_leg","r_leg"))
+			..()
+

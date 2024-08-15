@@ -1408,6 +1408,11 @@ ABSTRACT_TYPE(/obj/item/implant/revenge)
 			name = "birdshot"
 			desc = "A large collection of birdshot rounds, a less-lethal load for shotguns."
 
+	bullet_garand
+		name = "30-06 disintegrator round"
+		icon_state = "bulletexpanded"
+		desc = "A small stub of a modified large-calibre bullet, the rest of it is likely stuck in some poor spaceman/s torso."
+
 	staple
 		name = "staple"
 		icon_state = "staple"

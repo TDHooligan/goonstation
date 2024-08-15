@@ -97,3 +97,4 @@
 #define AMMO_FLINTLOCK_MORTAR "flintlock_hand_mortar"
 #define AMMO_COILGUN "coilgun"
 #define AMMO_KUVALDA "kuvalda"
+#define AMMO_GARAND "garand"
