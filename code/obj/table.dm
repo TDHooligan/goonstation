@@ -839,6 +839,19 @@ TYPEINFO_NEW(/obj/table/reinforced/chemistry)
 	has_drawer = TRUE
 	auto
 		auto = 1
+	place_on(obj/item/W as obj, mob/user as mob, params, imprecise = FALSE)
+		. = ..()
+		W.transform = matrix()
+		if (istype(W,/obj/item/reagent_containers/glass/plumbing/dropper))
+			W.transform = W.transform.Scale(0.775,0.775)
+		else if (istype(W,/obj/item/reagent_containers/glass/plumbing/condenser))
+			W.transform = W.transform.Scale(0.7,0.7)
+		else if (istype(W,/obj/item/reagent_containers/glass/beaker/large))
+			W.transform = W.transform.Scale(0.75,0.75)
+		else if (istype(W,/obj/item/reagent_containers/glass/beaker))
+			W.transform = W.transform.Scale(0.8,0.8)
+		W.AddComponent(/datum/component/reset_transform_on_pickup)
+
 
 /obj/table/reinforced/chemistry/auto/beakers //starts with 7 :B:eakers inside it, wow!!
 	name = "beaker storage"
