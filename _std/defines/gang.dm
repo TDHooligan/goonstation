@@ -40,7 +40,7 @@
 /// number of spray paints that are granted in this interval
 #define GANG_SPRAYPAINT_REGEN_QUANTITY 5
 /// time to tag on an unclaimed tile
-#define GANG_SPRAYPAINT_TAG_TIME 3 SECONDS
+#define GANG_SPRAYPAINT_TAG_TIME 6 SECONDS
 /// time to spray over an existing gang member's tag
 #define GANG_SPRAYPAINT_TAG_REPLACE_TIME 15 SECONDS
 /// score granted immediately on finishing a tag
