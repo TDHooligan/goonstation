@@ -1025,7 +1025,7 @@ ABSTRACT_TYPE(/obj/loot_spawner/random/medium)
 			I.parent?.tag_list("Ammo_Allowed", gun.default_magazine)
 
 	dagger
-		tier = GANG_CRATE_GUN
+		tier = GANG_CRATE_GEAR
 		spawn_loot(var/C,var/datum/loot_spawner_info/I)
 			spawn_item(C,I,/obj/item/dagger/throwing_knife/gang,rot=45,scale_x=0.55,scale_y=0.55)
 
@@ -1132,8 +1132,9 @@ ABSTRACT_TYPE(/obj/loot_spawner/random/long)
 			var/obj/item/gun/kinetic/gun = spawn_item(C,I,/obj/item/gun/kinetic/riot40mm,scale_x=0.8,scale_y=0.8)
 			I.parent?.tag_list("Ammo_Allowed", gun.default_magazine)
 
-			spawn_item(C,I,/obj/item/chem_grenade/flashbang,off_x=5,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
-			spawn_item(C,I,/obj/item/chem_grenade/flashbang,off_x=8,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
+			spawn_item(C,I,/obj/item/old_grenade/stinger/frag,off_x=5,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
+			spawn_item(C,I,/obj/item/old_grenade/stinger/frag,off_x=8,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
+			spawn_item(C,I,/obj/item/old_grenade/stinger/frag,off_x=10,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
 
 	// GANG_CRATE_GEAR
 	glasses
