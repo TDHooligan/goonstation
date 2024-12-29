@@ -51,10 +51,10 @@
 	ask_proc = TRUE
 	modifiers(mob/user, turf/move_target, running)
 		var/duration = user.getStatusDuration("disorient")
-		var/baseline_slow = 0
+		var/baseline_slow = 1
 		var/max_effect_at_duration = 10 SECONDS
 		var/max_extra_slowdown = 8
-		var/total_slow = baseline_slow+ lerp(0,max_extra_slowdown, duration/max_effect_at_duration)
+		var/total_slow = baseline_slow+ lerp(0,max_extra_slowdown, sqrt(clamp(duration/max_effect_at_duration,0,1)))
 		return list(total_slow,1) // list(additive_slowdown, multiplicative_slowdown)
 
 
