@@ -658,8 +658,8 @@ datum
 				var/amt = holder.get_reagent_amount(src.id)
 				var/magnitude = 1+clamp(amt/20, 1, 3) // heal faster in larger doses, but be way less efficient
 
-				if (prob(33+magnitude*10))
-					M.HealDamage("All", 2 * mult, 2 * mult)
+				if (prob(30+magnitude*10))
+					M.HealDamage("All", 0.75 * magnitude * mult, 0.75 * magnitude * mult)
 					if (M.get_brain_damage() >= 50) // stabilize, but keep death chance high above 200% damage
 						M.take_brain_damage(-1 * mult)
 				if (blood_system && isliving(M) && prob(33))
