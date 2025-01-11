@@ -897,7 +897,7 @@ datum
 					M.losebreath -= (1 * mult)
 				if(M.get_oxygen_deprivation() > 35)
 					M.take_oxygen_deprivation(-10 * mult)
-				if(M.health < -10 && M.health > -65)
+				if(M.health < 0 && M.health > -65)
 					M.HealDamage("All", 1 * mult, 1 * mult, 1 * mult)
 				..()
 				return
