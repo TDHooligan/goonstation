@@ -122,7 +122,7 @@
 				owner.gib(TRUE) // :v
 				return ..()
 
-		if (isdead(owner))
+		if (isdead(owner) || owner.hasStatus("indomitable"))
 			return ..()
 
 		if (current_blood_amt >= 415 && current_blood_amt <= 585)

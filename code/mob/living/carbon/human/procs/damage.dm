@@ -392,7 +392,10 @@
 		var/penalty = (5 * log(2, (brute+5)/5))
 		var/deathchance = min(99, ((src.get_brain_damage() * -5) + (src.health + (src.get_oxygen_deprivation() / 2))) * -0.01 + penalty)
 		if (prob(deathchance))
-			src.death()
+			if (src.hasStatus("indomitable"))
+				src.indomitable_death()
+			else
+				src.death()
 	src.bruteloss += brute
 	src.burnloss += burn
 

@@ -2494,6 +2494,27 @@ proc/broadcast_to_all_gangs(var/message)
 			user.drop_item(src)
 			src.set_loc(janktank)
 
+
+/obj/item/tool/hell_janktank
+	name = "JankTech Serum Mk III"
+	desc = "Market research showed Janktank I was popular, even when users knew the long-term effects. So Janktech created something WORSE. Oh god."
+	icon = 'icons/obj/syringe.dmi'
+	icon_state = "janktank_hell"
+	throwforce = 1
+	force = 1
+	w_class = W_CLASS_TINY
+	HELP_MESSAGE_OVERRIDE({"Grants 2 minutes of 'Indomitable'. Removes the ability to pick up items. Removes stuns and damage slowdown from being in crit. <br>
+	Does not stop death occurring in deep crit."})
+
+	attack(mob/O, mob/user)
+		if (istype(O, /mob/living/carbon/human))
+			var/mob/living/carbon/human/H = O
+			if (!H.get_gang() && !H.ghost.get_gang())
+				boutput(user, SPAN_ALERT("They aren't part of a gang! Janktank is <b><i>too cool</i></b> for them."))
+				return
+			H.indomitable_lives = 3
+			H.setStatus("indomitable", duration = 2 MINUTES)
+
 /obj/item/tool/quickhack
 	name = "QuickHack"
 	desc = "A highly illegal, disposable device that open doors like an AI."

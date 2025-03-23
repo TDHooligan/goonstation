@@ -1517,6 +1517,50 @@
 				if (prob(20))
 					violent_twitch(owner)
 					M.make_jittery(rand(6,9))
+	hell_janktank
+		id = "indomitable"
+		name = "Indomitable"
+		desc = "<b>NOT EVEN PAIN CAN STOP YOU</b><br> Reduced motor skills. Immune to crit penalties. Except for death rolls."
+		icon_state = "indomitable1"
+		duration = 2 MINUTES
+		maxDuration = 2 MINUTES
+		unique = 1
+		movement_modifier = /datum/movement_modifier/janktank_hell
+		effect_quality = STATUS_QUALITY_POSITIVE
+		onAdd(optional=null) //Optional is change.
+			. = ..()
+			if(ismob(owner))
+				var/mob/M = owner
+				owner.delStatus("critical_condition")
+				M.add_filter("muscly", 1, displacement_map_filter(icon=icon('icons/effects/distort.dmi', "muscly"), size=0))
+				animate(M.get_filter("muscly"), size=5, time=1 SECOND, easing=SINE_EASING)
+				M.bioHolder.age += 60
+				APPLY_ATOM_PROPERTY(M, PROP_MOB_STUN_RESIST, "hell_janktank", 50)
+				APPLY_ATOM_PROPERTY(M, PROP_MOB_STUN_RESIST_MAX, "hell_janktank", 50)
+
+		onRemove()
+			. = ..()
+			if(ismob(owner))
+				var/mob/M = owner
+				REMOVE_ATOM_PROPERTY(M, PROP_MOB_STUN_RESIST, "hell_janktank")
+				REMOVE_ATOM_PROPERTY(M, PROP_MOB_STUN_RESIST_MAX, "hell_janktank")
+				M.bioHolder.age -= 60
+				animate(M.get_filter("muscly"), size=0, time=1 SECOND, easing=SINE_EASING)
+				SPAWN(1 SECOND)
+					M.remove_filter("muscly")
+
+		onUpdate(timePassed)
+			if(isliving(owner))
+				var/mob/living/M = owner
+				if (M.indomitable_dying)
+					icon_state = "indomitabledeath"
+				else
+					icon_state = "indomitable[clamp(4-M.indomitable_lives,1,3)]"
+				M.cure_disease_by_path(/datum/ailment/malady/shock)
+				M.cure_disease_by_path(/datum/ailment/malady/flatline)
+				M.cure_disease_by_path(/datum/ailment/malady/heartfailure)
+			..()
+			return
 
 	mutiny
 		id = "mutiny"

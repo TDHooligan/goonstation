@@ -118,6 +118,9 @@
 	var/list/stamina_mods_regen = list()
 	var/list/stamina_mods_max = list()
 
+	var/indomitable_dying = FALSE /// are we dying heroically?
+	var/indomitable_immune = FALSE /// have we 'died' recently?
+	var/indomitable_lives = 0	/// how many times can we 'die' before actually dropping dead?
 	var/last_sleep = 0 //used for sleep_bubble
 
 	can_lie = TRUE
@@ -197,6 +200,36 @@
 	if(src.ai_active)
 		ai_mobs.Remove(src)
 	..()
+
+var/list/directions = list(NORTH, NORTHEAST, NORTHWEST, SOUTH, SOUTHWEST, SOUTHEAST, EAST, WEST)
+/mob/living/proc/indomitable_death()
+	if (indomitable_immune)
+		return
+	if (indomitable_lives > 0)
+		indomitable_lives--
+		indomitable_immune = TRUE
+		src.emote("scream")
+		SPAWN(5 SECONDS)
+			indomitable_immune = FALSE
+		playsound(src, pick('sound/impact_sounds/Flesh_Stab_1.ogg','sound/impact_sounds/Slimy_Splat_1.ogg','sound/impact_sounds/Flesh_Tear_2.ogg','sound/impact_sounds/Slimy_Hit_3.ogg'), 66)
+		blood_slash(src, 1,src,pick(directions), rand(3,4))
+		return
+	if (indomitable_dying)
+		return
+	src.indomitable_dying = TRUE
+	var/time = 0
+	src.make_jittery(200)
+	src.emote("scream")
+	src.visible_message("[src.name] writhes in pain, screaming as their body tears itself apart!", "<b>IT'S TOO MUCH!</b>")
+	SPAWN (10 SECONDS)
+		src.delStatus("indomitable")
+		indomitable_dying = FALSE
+		death()
+	while (time < 10 SECONDS)
+		time = min(10 SECONDS, time+rand(6 DECI SECONDS, 12 DECI SECONDS))
+		SPAWN (time)
+			playsound(src, pick('sound/impact_sounds/Flesh_Stab_1.ogg','sound/impact_sounds/Slimy_Splat_1.ogg','sound/impact_sounds/Flesh_Tear_2.ogg','sound/impact_sounds/Slimy_Hit_3.ogg'), 66)
+			blood_slash(src, 1,src,pick(directions), rand(3,4))
 
 /mob/living/death(gibbed)
 	#define VALID_MOB(M) (!isVRghost(M) && !isghostcritter(M) && !inafterlife(M) && !M.hasStatus("in_afterlife"))
