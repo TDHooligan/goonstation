@@ -231,8 +231,7 @@
 
 	var/image/chat_maptext/chat_text = null
 	if (speechpopups && src.chat_text)
-		var/num = hex2num(copytext(md5(src.get_heard_name(just_name_itself=TRUE)), 1, 7))
-		var/maptext_color = hsv2rgb((num % 360)%40+240, (num / 360) % 15+5, (((num / 360) / 10) % 15) + 55)
+		var/maptext_color = dead_maptext_color(src.get_heard_name(just_name_itself=TRUE))
 
 		var/turf/T = get_turf(src)
 		for(var/i = 0; i < 2; i++) T = get_step(T, WEST)
@@ -572,25 +571,22 @@
 	SEND_SIGNAL(src, COMSIG_MOB_EMOTE, act, voluntary, target)
 
 /mob/proc/emote_check(voluntary = 1, time = 1 SECOND, admin_bypass = TRUE, dead_check = TRUE)
-	if (src.emote_allowed)
-		if (dead_check && isdead(src))
-			src.emote_allowed = FALSE
-			return FALSE
-		if (voluntary && (src.hasStatus("unconscious") || src.hasStatus("paralysis") || isunconscious(src)))
-			return FALSE
-		if (world.time >= (src.last_emote_time + src.last_emote_wait))
-			if (!no_emote_cooldowns && !(src.client && (src.client.holder && admin_bypass) && !src.client.player_mode) && voluntary)
-				src.emote_allowed = FALSE
-				src.last_emote_time = world.time
-				src.last_emote_wait = time
-				SPAWN(time)
-					src.emote_allowed = TRUE
-			return TRUE
-		else
-			return FALSE
-	else
+	if ((!src.emote_allowed))
 		return FALSE
-
+	if (dead_check && isdead(src))
+		src.emote_allowed = FALSE
+		return FALSE
+	if (voluntary && (src.hasStatus("unconscious") || src.hasStatus("paralysis") || isunconscious(src)))
+		return FALSE
+	if (world.time >= (src.last_emote_time + src.last_emote_wait))
+		if (!no_emote_cooldowns && !(src.client && (src.client.holder && admin_bypass) && !src.client.player_mode) && voluntary)
+			src.emotes_on_cooldown = TRUE
+			src.last_emote_time = world.time
+			src.last_emote_wait = time
+			SPAWN(time)
+				src.emotes_on_cooldown = FALSE
+		return TRUE
+	return FALSE
 /mob/proc/listen_ooc()
 	set name = "(Un)Mute OOC"
 	set desc = "Mute or Unmute Out Of Character chat."
@@ -1175,3 +1171,13 @@
 
 		if(thisR != "")
 			boutput(M, thisR)
+
+/// Generate a hue for maptext from a given name
+/proc/living_maptext_color(given_name)
+	var/num = hex2num(copytext(md5(given_name), 1, 7))
+	return hsv2rgb(num % 360, (num / 360) % 10 + 18, num / 360 / 10 % 15 + 85)
+
+/// Generate a desatureated hue for maptext from a given name
+/proc/dead_maptext_color(given_name)
+	var/num = hex2num(copytext(md5(given_name), 1, 7))
+	return hsv2rgb((num % 360)%40+240, (num / 360) % 15+5, (((num / 360) / 10) % 15) + 55)

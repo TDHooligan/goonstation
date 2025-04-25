@@ -66,8 +66,7 @@ var/datum/magpie_manager/magpie_man = new
 			SPAWN(1.5 SECONDS)
 				UpdateOverlays(null, "bot_speech_bubble")
 			if(!src.bot_speech_color)
-				var/num = hex2num(copytext(md5("[src.name][TIME]"), 1, 7))
-				src.bot_speech_color = hsv2rgb(num % 360, (num / 360) % 10 + 18, num / 360 / 10 % 15 + 85)
+				src.bot_speech_color = living_maptext_color("[src.name][TIME]")
 			var/maptext_color
 			if (sing)
 				maptext_color ="#D8BFD8"
@@ -467,17 +466,31 @@ ABSTRACT_TYPE(/datum/commodity/magpie/sell)
 
 #ifndef UNDERWATER_MAP
 	pod_kinetic
-		comname = "Ballistic System"
+		comname = "SPE-12 Ballistic System"
 		comtype = /obj/item/shipcomponent/mainweapon/gun
 		desc = "A pod-mounted kinetic weapon system."
+		price = 5000
+		amount = 3
+
+	pod_kinetic_9mm
+		comname = "PEP-9L Ballistic System"
+		comtype = /obj/item/shipcomponent/mainweapon/gun_9mm/uses_ammo
+		desc = "A pod-mounted kinetic weapon system. Has limited ammunition."
 		price = 3000
+		amount = 3
+
+	pod_kinetic_22
+		comname = "PEP-22L Ballistic System"
+		comtype = /obj/item/shipcomponent/mainweapon/gun_22/uses_ammo
+		desc = "A pod-mounted kinetic weapon system. Has limited ammunition."
+		price = 2200
 		amount = 3
 
 	pod_40mm
 		comname = "40mm Assault Platform"
 		comtype = /obj/item/shipcomponent/mainweapon/artillery/lower_ammo
 		desc = "A pair of pod-mounted ballistic launchers, fires explosive 40mm shells. Holds 6 shells."
-		price = 5000
+		price = 8000
 		amount = 3
 
 	artillery_ammo
