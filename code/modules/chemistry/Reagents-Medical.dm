@@ -631,7 +631,7 @@ datum
 			fluid_g = 220
 			fluid_b = 220
 			transparency = 40
-			depletion_rate = 0.4
+			depletion_rate = 0.8
 			value = 5 // 3c + 1c + 1c
 			overdose = 100 // hypervolemia or something. dont just chug this
 
@@ -640,13 +640,13 @@ datum
 				. = ..()
 				var/amt = holder.get_reagent_amount(src.id)
 				switch(amt)
-					if(0 to 30) // IV drip at ~20% saline (1)
+					if(0 to 30) // IV drip at ~33% saline
 						. *= 1
-					if(30 to 50) // IV drip 50% saline (2.5)
+					if(30 to 50) // IV drip 100% saline
 						. *= 2.5
-					if(50 to 70) // IV drip 100% saline (5)
+					if(50 to 70) // slow metabolism
 						. *= 5
-					if(70 to 100) // nerd pilled it, or slow metabolism
+					if(70 to 100) // nerd pilled it
 						. *= 10
 					if(100 to INFINITY) // nerd tried to abuse it
 						. *= 15
@@ -657,9 +657,9 @@ datum
 					M = holder.my_atom
 
 				var/amt = holder.get_reagent_amount(src.id)
-				var/magnitude = 1+clamp(amt/20, 1, 3) // heal faster in larger doses, but be way less efficient
+				var/magnitude = 1+clamp(amt/10, 1, 3) // heal faster in larger doses, but be way less efficient
 
-				if (prob(33+magnitude*10))
+				if (prob(20+magnitude*10))
 					M.HealDamage("All", 2 * mult, 2 * mult, 1 * mult)
 					if (M.get_brain_damage() >= 50) // stabilize, but keep death chance high above 200% damage
 						M.take_brain_damage(-1 * mult)
