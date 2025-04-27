@@ -1487,6 +1487,7 @@ ABSTRACT_TYPE(/obj/item/implant/revenge)
 		bleed_time = 0
 		leaves_wound = FALSE
 		var/barbed = FALSE
+		var/attempted_pull = FALSE
 		var/pull_out_name = ""
 
 		proc/on_pull_out(mob/living/puller)

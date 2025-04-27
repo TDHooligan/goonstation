@@ -174,7 +174,8 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 			if (src.sanitycheck(0, 1) == 0)
 				user.show_text("You can't unload this gun.", "red")
 				return
-			src.eject_magazine(user)
+			if (src.eject_magazine(user))
+				return
 		return ..()
 
 	attack(mob/target, mob/user, def_zone, is_special = FALSE, params = null)
@@ -225,15 +226,15 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 				if (src.sanitycheck(1, 0) == 0)
 					logTheThing(LOG_DEBUG, usr, "<b>Convair880</b>: [usr]'s gun ([src]) ran into the casings_to_eject cap, aborting.")
 					src.casings_to_eject = 0
-					return
+					return FALSE
 				else
 					user.show_text("You eject [src.casings_to_eject] casings from [src].", "red")
 					src.ejectcasings()
 					playsound(src, src.ammo.sound_load, rand(30, 60), TRUE)
-					return
+					return FALSE
 			else
 				user.show_text("[src] is empty!", "red")
-				return
+				return FALSE
 
 		// Make a copy here to avoid item teleportation issues.
 		var/obj/item/ammo/bullets/ammoHand = new src.ammo.type
@@ -259,7 +260,7 @@ ABSTRACT_TYPE(/obj/item/gun/kinetic)
 
 		user.visible_message(SPAN_ALERT("[user] unloads [src]."), SPAN_ALERT("You unload [src]."))
 		//DEBUG_MESSAGE("Unloaded [src]'s ammo manually.")
-		return
+		return TRUE
 
 	proc/ejectcasings()
 		if ((src.casings_to_eject > 0) && src.current_projectile.casing && (src.sanitycheck(1, 0) == 1))
@@ -1092,6 +1093,120 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		else
 			. = clamp(. + rand(-8,8),10,26)
 		. /= 10
+
+
+
+/obj/item/gun/kinetic/folding_gun
+	name = "MAT-49 SMG"
+	desc = "Nobody asked 'Why can't I fold my magazine flat'? The space french answered anyway. It fits under your jumpsuit real nice though."
+	icon_state = "mat49_folded"
+	item_state = "mat49"
+	icon = 'icons/obj/items/guns/kinetic48x32.dmi'
+	spread_angle = 3
+	shoot_delay = 5
+	two_handed = FALSE
+	has_empty_state = FALSE
+	w_class = W_CLASS_SMALL
+	force = MELEE_DMG_PISTOL
+	ammo_cats = list(AMMO_SMG_9MM)
+	max_ammo_capacity = 32
+	auto_eject = TRUE
+	fire_animation = TRUE
+	default_magazine = /obj/item/ammo/bullets/nine_mm_surplus/mag_mat49
+	icon_recoil_cap = 20
+	recoil_inaccuracy_max = 17
+	var/folded_state = "mat49_folded"
+	var/unfolded_state = "mat49"
+	var/fold_flick = "mat49_fold"
+	var/unfold_flick = "mat49_unfold"
+	var/tilted = FALSE // tilt when picked up
+
+	HELP_MESSAGE_OVERRIDE({"Use the gun inhand to fold/unfold it. When folded, it can be hidden under your jumpsuit, revealed only by HELP intenting yourself or having someone else do the same."})
+
+	suppressed
+		name = "MAT-49 Suppressed SMG"
+		icon_state = "mat49_s_folded"
+		item_state = "mat49_s"
+		folded_state = "mat49_s_folded"
+		unfolded_state = "mat49_s"
+		fold_flick = "mat49_s_fold"
+		unfold_flick = "mat49_s_unfold"
+
+		alter_projectile(obj/projectile/P)
+			. = ..()
+			P.proj_data.shot_sound = 'sound/weapons/mat49_fire.ogg'
+
+	New()
+		ammo = new default_magazine
+
+		set_current_projectile(new/datum/projectile/bullet/nine_mm_surplus/auto)
+		AddComponent(/datum/component/holdertargeting/fullauto, 1.2)
+		..()
+
+	dropped(mob/user)
+		if (!two_handed && tilted)
+			tilted = FALSE
+			src.transform = src.transform.Turn(-45)
+		. = ..()
+
+	attack_hand(mob/user)
+		if (!user.find_in_hand(src))
+			if (!two_handed && !tilted)
+				tilted = TRUE
+				src.transform = src.transform.Turn(45)
+		. = ..()
+
+	canshoot(mob/user)
+		return(..() && src.two_handed)
+	attack_self(mob/user as mob)
+		if(ishuman(user) && !ON_COOLDOWN(src, "folding", 2 SECONDS))
+			var/iconstate_target
+			if (two_handed)
+				iconstate_target = fold_flick
+			else
+				iconstate_target = unfold_flick
+			playsound(src.loc, 'sound/weapons/unfold.ogg', 50, 1)
+			SETUP_GENERIC_ACTIONBAR(user, src, 1 SECOND, /obj/item/gun/kinetic/folding_gun/proc/do_fold, user, src.icon, iconstate_target,"[user] finishes [two_handed ? "folding" : "unfolding"] the [src].", null)
+			return
+
+	//copy pastes brought to you by bullets telling guns how to shoot!
+	attackby(obj/item/ammo/bullets/b, mob/user)
+		var/obj/previous_ammo = ammo
+		..()
+		if(previous_ammo.type != ammo.type)  // we switched ammo types
+			if(istype(ammo, /obj/item/ammo/bullets/nine_mm_surplus))
+				set_current_projectile(new/datum/projectile/bullet/nine_mm_surplus/auto)
+			else if(istype(ammo, /obj/item/ammo/bullets/bullet_9mm/smg))
+				set_current_projectile(new/datum/projectile/bullet/bullet_9mm/smg/auto)
+
+	afterattack(obj/O as obj, mob/user as mob)
+		if (!src.two_handed && O.loc == user && O != src && istype(O, /obj/item/clothing/under))
+			boutput(user, SPAN_HINT("You hide the rifle inside \the [O]. Use HELP intent on yourself to reveal it."))
+			user.u_equip(src)
+			src.set_loc(O)
+			src.dropped(user)
+		else
+			..()
+		return
+	proc/do_fold(mob/user as mob)
+		if(two_handed)
+			setTwoHanded(0) //Go 1-handed.
+			flick(fold_flick, src)
+			icon_state = folded_state
+			if (!tilted)
+				tilted = TRUE
+				src.transform = src.transform.Turn(45)
+		else
+			if(!setTwoHanded(1)) //Go 2-handed.
+				boutput(user, SPAN_ALERT("Can't switch to 2-handed while your other hand is full."))
+			else
+				flick(unfold_flick, src)
+				if (tilted)
+					tilted = FALSE
+					src.transform = src.transform.Turn(-45)
+				icon_state = unfolded_state
+
+
 
 /obj/item/gun/kinetic/draco
 	name = "\improper Draco Pistol"

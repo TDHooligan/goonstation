@@ -35,11 +35,23 @@
 			src.administer_CPR(M)
 		else
 			src.visible_message(SPAN_NOTICE("[src] shakes [M], trying to wake [him_or_her(M)] up!"))
+			M.shakedown()
 			hit_twitch(M)
 	else if (M.is_bleeding())
 		src.staunch_bleeding(M)
 	else if (src.health > 0)
 		src.shake_awake(M)
+
+
+/mob/living/proc/shakedown()
+	if (ishuman(src) && prob(50))
+		var/mob/living/carbon/human/H = src
+		var/obj/item/gun/kinetic/folding_gun/gat = locate(/obj/item/gun/kinetic/folding_gun) in H.w_uniform
+		if (gat)
+			gat.set_loc(H.loc)
+			H.visible_message(SPAN_ALERT("<B>... and a folded gun falls out of [his_or_her(H)] [H.w_uniform]!</B>"))
+			playsound(H.loc, "rustle", 60, 1)
+			return
 
 /mob/proc/help_put_out_fire(var/mob/living/M)
 	playsound(M.loc, 'sound/impact_sounds/Generic_Shove_1.ogg', 50, 1, 0 , 0.7)
@@ -93,9 +105,21 @@
 				SETUP_GENERIC_ACTIONBAR(src, target, 1 SECOND, /mob/living/proc/pull_out_implant, list(target, P), P.icon, P.icon_state, \
 					src.visible_message(SPAN_COMBAT("<b>[src] pulls a [P.pull_out_name] out of [himself_or_herself(src)]!</B>")), \
 					INTERRUPT_ACT | INTERRUPT_STUNNED | INTERRUPT_ACTION | INTERRUPT_MOVE)
-			else
+			else if (P.attempted_pull == FALSE)
+				P.attempted_pull = TRUE
 				src.visible_message(SPAN_COMBAT("<b>[src] tries to pull a [P.pull_out_name] out of [himself_or_herself(src)], but it's stuck in!</B>"))
 			return
+		if (ishuman(src))
+			var/mob/living/carbon/human/H = src
+			var/obj/item/gun/kinetic/folding_gun/gat = locate(/obj/item/gun/kinetic/folding_gun) in H.w_uniform
+			if (gat)
+				if (!src.restrained())
+					var/drophand = (src.hand == RIGHT_HAND ? SLOT_R_HAND : SLOT_L_HAND)
+					gat.set_loc(src.loc)
+					H.equip_if_possible(gat, drophand)
+					src.visible_message(SPAN_ALERT("<B>[src] pulls a folded gun out of [his_or_her(H)] [H.w_uniform]!</B>"))
+					playsound(src.loc, "rustle", 60, 1)
+					return
 
 		var/obj/stool/S = (locate(/obj/stool) in src.loc)
 		if (S)
@@ -146,6 +170,7 @@
 				var/mob/living/critter/C = target
 				C.on_pet(src)
 			else
+				M.shakedown()
 				src.visible_message(SPAN_NOTICE("[src] shakes [target], trying to grab [his_or_her(target)] attention!"))
 	hit_twitch(target)
 

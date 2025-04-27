@@ -623,6 +623,13 @@
 		name = "9mm Grease Gun magazine"
 		amount_left = 30
 		max_amount = 30
+
+	mag_mat49
+		name = "9mm MAT-49 magazine"
+		icon_state = "mat49_mag"
+		icon_empty = "mat49_mag-empty"
+		amount_left = 32
+		max_amount = 32
 /obj/item/ammo/bullets/nine_mm_soviet
 	sname = "9x18mm Makarov"
 	name = "9x18mm magazine"
