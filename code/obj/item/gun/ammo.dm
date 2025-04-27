@@ -465,13 +465,13 @@
 	name = ".30-06 Garand clip"
 	desc = "A clip of .30-06 bullets. Why are these out here?"
 	ammo_type = new/datum/projectile/bullet/garand
-	icon_state = "garand_clip"
+	icon_state = "garandclip"
 	amount_left = 8
 	max_amount = 8
 	ammo_cat = AMMO_GARAND
 	icon_dynamic = FALSE
-	icon_short = "garand_clip"
-	icon_empty = "garand_clip_empty"
+	icon_short = "garandclip"
+	icon_empty = "garandclip_empty"
 
 
 /obj/item/ammo/bullets/rifle_3006 // actually presumably .308 winchester
