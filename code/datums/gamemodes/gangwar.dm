@@ -1182,7 +1182,7 @@ proc/broadcast_to_all_gangs(var/message)
 			tags_single += i
 	proc/refresh_double_tags()
 		tags_double = list()
-		for (var/i=1 to 13)
+		for (var/i=1 to 15)
 			tags_double += i
 	proc/refresh_triple_tags()
 		tags_triple = list()

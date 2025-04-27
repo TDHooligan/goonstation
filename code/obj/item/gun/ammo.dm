@@ -459,7 +459,22 @@
 		desc = "A curved 30 round magazine, for the Draco Pistol."
 		ammo_type = new/datum/projectile/bullet/draco
 
-/obj/item/ammo/bullets/rifle_3006
+
+/obj/item/ammo/bullets/garand_3006 // real 30-06 springfield.
+	sname = ".30-06 Springfield"
+	name = ".30-06 Garand clip"
+	desc = "A clip of .30-06 bullets. Why are these out here?"
+	ammo_type = new/datum/projectile/bullet/garand
+	icon_state = "garand_clip"
+	amount_left = 8
+	max_amount = 8
+	ammo_cat = AMMO_GARAND
+	icon_dynamic = FALSE
+	icon_short = "garand_clip"
+	icon_empty = "garand_clip_empty"
+
+
+/obj/item/ammo/bullets/rifle_3006 // actually presumably .308 winchester
 	sname = ".308 AP"
 	name = ".308 rifle magazine"
 	desc = "An old stripper clip of .308 bullets, ready to rip through whatever they hit."
@@ -472,7 +487,7 @@
 	icon_short = "rifle_clip"
 	icon_empty = "rifle_clip_empty"
 
-/obj/item/ammo/bullets/rifle_762_NATO
+/obj/item/ammo/bullets/rifle_762_NATO // 7.62 NATO. also known as .308. but different from .308 winchester
 	sname = "7.62×51mm NATO"
 	name = "7.62 NATO magazine"
 	desc = "Some powerful 7.62 cartridges."

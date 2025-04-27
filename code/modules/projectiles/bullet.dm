@@ -232,6 +232,24 @@ toxic - poisons
 	casing = /obj/item/casing/rifle
 	ricochets = TRUE
 
+/datum/projectile/bullet/garand
+	name = "bullet"
+	damage = 55
+	icon_state = "sniper_bullet"
+	damage_type = D_PIERCING
+	armor_ignored = 0.66
+	hit_type = DAMAGE_STAB
+	implanted = /obj/item/implant/projectile/bullet_308
+	shot_sound = 'sound/weapons/assrifle.ogg'
+	shot_volume = 50
+	dissipation_delay = 8
+	dissipation_rate = 3
+	projectile_speed = 72
+	max_range = 100
+	casing = /obj/item/casing/rifle_loud
+	impact_image_state = "bullethole-large"
+
+
 /datum/projectile/bullet/rifle_3006
 	name = "bullet"
 	damage = 85
