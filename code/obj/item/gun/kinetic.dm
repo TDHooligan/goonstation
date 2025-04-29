@@ -3326,10 +3326,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 	can_dual_wield = FALSE
 	spread_angle = 1
 	recoil_inaccuracy_max = 20
-	recoil_max = 10
+	recoil_max = 20
 
-	fire_animation = FALSE
-	has_empty_state = FALSE
+	fire_animation = TRUE
+	has_empty_state = TRUE
 	default_magazine = /obj/item/ammo/bullets/garand_3006
 
 	New()
@@ -3338,12 +3338,21 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		..()
 
 	shoot(turf/target, turf/start, mob/user, POX, POY, is_dual_wield, atom/called_target = null)
-		..()
-		if (src.ammo?.amount_left == 0)
-			src.ammo.set_loc(user.loc)
-			src.ammo = null
+		if (src.canshoot(user) && src.ammo?.amount_left == 1)
+			src.ammo.delete_on_reload = 1
 			playsound(user.loc, 'sound/weapons/garand_ping.ogg', 35, FALSE)
-
+			var/obj/item/ammo/bullets/clip = new src.ammo.type
+			clip.amount_left = 0
+			clip.name = src.ammo.name
+			clip.icon = src.ammo.icon
+			clip.icon_state = src.ammo.icon_state
+			clip.ammo_type = src.ammo.ammo_type
+			clip.delete_on_reload = 0 // No duplicating empty magazines, please (Convair880).
+			clip.UpdateIcon()
+			clip.set_loc(user.loc)
+			clip.after_unload(user)
+			return TRUE
+		..()
 
 
 // heavy
