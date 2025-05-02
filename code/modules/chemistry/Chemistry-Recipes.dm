@@ -2753,7 +2753,7 @@
 		name = "Iron Oxide"
 		id = "iron_oxide"
 		result = "iron_oxide"
-		required_reagents = list("iron" = 1, "oxygen" = 1, "acetic_acid" = 1, "salt" = 1)
+		required_reagents = list("iron" = 1, "oxygen" = 1, "acid" = 1)
 		result_amount = 4
 		mix_phrase = "The iron rapidly rusts."
 		min_temperature = T0C + 100
