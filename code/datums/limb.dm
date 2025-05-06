@@ -1187,6 +1187,11 @@
 	hastur
 		weak = 2 //Same reason as above, its too similar to warrant a new limb.
 
+	New(var/obj/item/parts/holder)
+		..()
+		if (!weak)
+			src.setHarmSpecial (/datum/item_special/abom_swipe)
+
 	attack_hand(atom/target, var/mob/living/user, var/reach, params, location, control)
 		if (!holder)
 			return

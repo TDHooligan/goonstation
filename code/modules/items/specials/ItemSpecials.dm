@@ -2206,6 +2206,18 @@ ABSTRACT_TYPE(/datum/item_special/spark)
 			pixel_x = rand(-5,5)
 			pixel_y = rand(-5,5)
 			..()
+	ling_swipe
+		icon = 'icons/effects/meleeeffects.dmi'
+		icon_state = "ling_swipe"
+		pixel_x = -32
+		pixel_y = -32
+
+	ling_heavyswipe
+		icon = 'icons/effects/160x160.dmi'
+		icon_state = "ling_heavy_swipe"
+		pixel_x = -64
+		pixel_y = -64
+
 	barrier
 		name = "energy barrier"
 		icon = 'icons/effects/effects.dmi'
@@ -2217,7 +2229,6 @@ ABSTRACT_TYPE(/datum/item_special/spark)
 		del_self = 0
 		clash_time = -1
 		explosion_resistance = 10
-
 
 		//mouse_opacity = 1
 		var/bump_count = 0
@@ -2490,3 +2501,89 @@ ABSTRACT_TYPE(/datum/item_special/spark)
 			state = ACTIONSTATE_FINISH
 			return
 
+
+/datum/item_special/abom_swipe
+	cooldown = 10 //30
+	staminaCost = 5
+	moveDelay = 5
+	moveDelayDuration = 5
+
+	damageMult = 1
+
+	image = "swipe"
+	name = "Flail"
+	desc = "Attack with a wide swing. Using this twice in a short time will cause a larger follow up attack.."
+	var/followup = FALSE
+
+	pixelaction(atom/target, list/params, mob/user, reach)
+		if(!isturf(target.loc) && !isturf(target)) return
+		if(!usable(user)) return
+		if(user && get_dist_pixel_squared(user, target, params) > ITEMSPECIAL_PIXELDIST_SQUARED)
+			preUse(user)
+			var/direction = get_dir_pixel(user, target, params)
+			if(direction == NORTHEAST || direction == NORTHWEST || direction == SOUTHEAST || direction == SOUTHWEST)
+				direction = (prob(50) ? turn(direction, 45) : turn(direction, -45))
+
+			if (followup)
+				followup = FALSE
+				do_heavy_attack(user, direction, params)
+			else
+				do_swipe_attack(user, direction, params)
+				var/followup = TRUE
+				SPAWN(3 SECONDS)
+					if (followup)
+						followup = FALSE
+
+	proc/do_swipe_attack(mob/user, var/direction, var/params)
+		var/list/attacked = list()
+		var/turf/one = get_step(user, direction)
+		var/turf/effect_origin = get_step(one, direction)
+		var/turf/two = get_step(one, turn(direction, 90))
+		var/turf/three = get_step(one, turn(direction, -90))
+
+		var/obj/itemspecialeffect/swipe/swipe = new /obj/itemspecialeffect/ling_swipe
+		swipe.setup(effect_origin)
+		swipe.set_dir(direction)
+		var/hit = 0
+		for(var/turf/T in list(one, two))
+			for(var/atom/A in atoms_in_combat_range(T))
+				if(A in attacked) continue
+				if(isTarget(A))
+					A.Attackby(master, user, params, 1)
+					attacked += A
+					hit = 1
+		if (!hit)
+			playsound(master, 'sound/effects/swoosh.ogg', 50, FALSE)
+		SPAWN(2 DECI SECONDS)
+			hit = 0
+			for(var/turf/T in list(one, three))
+				for(var/atom/A in atoms_in_combat_range(T))
+					if(A in attacked) continue
+					if(isTarget(A))
+						A.Attackby(master, user, params, 1)
+						attacked += A
+						hit = 1
+			if (!hit)
+				playsound(master, 'sound/effects/swoosh.ogg', 50, FALSE)
+			afterUse(user)
+		return
+	proc/do_heavy_attack(mob/user, var/direction, var/params)
+		var/list/attacked = list()
+		var/turf/one = get_step(user, direction)
+		var/turf/effect_origin = get_step(one, direction)
+		var/turf/two = get_step(one, turn(direction, 90))
+		var/turf/three = get_step(one, turn(direction, -90))
+
+		var/obj/itemspecialeffect/swipe/swipe = new /obj/itemspecialeffect/ling_heavyswipe
+		swipe.setup(effect_origin)
+		swipe.set_dir(direction)
+		var/hit = 0
+		for(var/turf/T in list(one, two))
+			for(var/atom/A in atoms_in_combat_range(T))
+				if(A in attacked) continue
+				if(isTarget(A))
+					A.Attackby(master, user, params, 1)
+					attacked += A
+					hit = 1
+		if (!hit)
+			playsound(master, 'sound/effects/swoosh.ogg', 50, FALSE)
