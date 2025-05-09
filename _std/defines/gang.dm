@@ -97,6 +97,7 @@
 #endif
 #define GANG_LOOT_DROP_VOLUME_PER_GANG 2 //! how many duffel bags spawn, per gang
 
+#define GANG_CRATE_DROP_RADIUS 40 //! The minimum distance away from a gang locker crates can drop
 
 
 // LAUNDERING DEFINES

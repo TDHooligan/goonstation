@@ -115,11 +115,14 @@
 		var/attempts = 0
 		var/area/drop_zone
 
-		while (attempts <= 3 && !length(turfList))
+		while (attempts <= 5 && !length(turfList))
 			attempts++
 			drop_zone = pick(potential_hot_zones)
 			for (var/turf/simulated/floor/T in drop_zone.contents)
 				if (!is_blocked_turf(T))
+					for_by_tcl(locker, /obj/ganglocker)
+						if (IN_EUCLIDEAN_RANGE(T, locker,GANG_CRATE_DROP_RADIUS))
+							continue
 					turfList.Add(T)
 			if (!length(turfList))
 				logTheThing(LOG_DEBUG, null, "Couldn't find a valid location to drop a weapons crate inside [drop_zone.name].")
