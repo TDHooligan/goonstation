@@ -55,6 +55,12 @@
 
 		return 0.5
 
+//When this movement controller starts being used
+/datum/movement_controller/sniper_scope/proc/start()
+//When this movement controller stops being used
+/datum/movement_controller/sniper_scope/proc/stop()
+
+
 //A lightweight scope, better suited for medium-range sniping.
 /datum/movement_controller/sniper_scope/light
 	speed = 64
