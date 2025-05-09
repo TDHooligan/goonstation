@@ -2216,6 +2216,8 @@ TYPEINFO(/obj/item/cargotele)
 		var/list/allowed_supertypes = list(/obj/machinery/portable_atmospherics/canister, /obj/reagent_dispensers, /obj/storage, /obj/geode)
 		for (var/supertype in allowed_supertypes)
 			for (var/subtype in typesof(supertype))
+				if (subtype == /obj/storage/crate/gang_crate)
+					continue
 				allowed_types[subtype] = 1
 		allowed_types -= /obj/storage/closet/flock
 
