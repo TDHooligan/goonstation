@@ -559,7 +559,7 @@
 		var/desiredX  = 1
 		var/desiredY  = 1
 		//scaling prob for each X size of loot
-		while (length(spawners) > desiredX && desiredX < largestX && prob(90-(20*desiredX)))
+		while (length(spawners) > desiredX && desiredX < largestX && prob(90-(15*desiredX)))
 			desiredX++
 		// 40% to make it 2 tiles tall
 		while (length(spawners[1]) > desiredY && desiredY < largestY && prob(40))
@@ -1141,6 +1141,17 @@ ABSTRACT_TYPE(/obj/loot_spawner/random/long)
 			spawn_item(C,I,/obj/item/chem_grenade/flashbang,off_x=5,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
 			spawn_item(C,I,/obj/item/chem_grenade/flashbang,off_x=8,off_y=-4,rot=90,scale_x=0.8,scale_y=0.8)
 
+	mat49
+		weight = 15
+		tier = GANG_CRATE_GUN
+		spawn_loot(var/C,var/datum/loot_spawner_info/I)
+			var/obj/item/gun/kinetic/gun
+			if (prob(50))
+				gun = spawn_item(C,I,/obj/item/gun/kinetic/folding_gun,off_x=-8,off_y=-1,scale_x=0.6,scale_y=0.8)
+			else
+				gun = spawn_item(C,I,/obj/item/gun/kinetic/folding_gun/suppressed,off_x=-8,off_y=-1,scale_x=0.6,scale_y=0.8)
+			I.parent?.tag_list("Ammo_Allowed", gun.default_magazine)
+
 	// GANG_CRATE_GEAR
 	glasses
 		tier = GANG_CRATE_GEAR
@@ -1174,10 +1185,10 @@ ABSTRACT_TYPE(/obj/loot_spawner/random/xlong)
 	xSize = 4
 	ySize = 1
 	// GANG_CRATE_GUN
-	riotgun
+	garand
 		tier = GANG_CRATE_GUN
 		spawn_loot(var/C,var/datum/loot_spawner_info/I)
-			var/obj/item/gun/kinetic/gun = spawn_item(C,I,/obj/item/gun/kinetic/pumpweapon/riotgun,off_x=-8,off_y=0)
+			var/obj/item/gun/kinetic/gun = spawn_item(C,I,/obj/item/gun/kinetic/garand/gang,off_x=-8,off_y=0,scale_x=0.7,scale_y=0.9)
 			I.parent?.tag_list("Ammo_Allowed", gun.default_magazine)
 
 	m16

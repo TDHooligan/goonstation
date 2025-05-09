@@ -236,8 +236,7 @@ toxic - poisons
 	name = "bullet"
 	damage = 55
 	icon_state = "sniper_bullet"
-	damage_type = D_PIERCING
-	armor_ignored = 0.66
+	damage_type = D_KINETIC
 	hit_type = DAMAGE_STAB
 	implanted = /obj/item/implant/projectile/bullet_308
 	shot_sound = 'sound/weapons/assrifle.ogg'

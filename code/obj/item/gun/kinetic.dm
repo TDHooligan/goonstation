@@ -1152,11 +1152,11 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		. = ..()
 
 	attack_hand(mob/user)
+		. = ..()
 		if (!user.find_in_hand(src))
 			if (!two_handed && !tilted)
 				tilted = TRUE
 				src.transform = src.transform.Turn(45)
-		. = ..()
 
 	canshoot(mob/user)
 		return(..() && src.two_handed)
