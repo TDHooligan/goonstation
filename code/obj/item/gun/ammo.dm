@@ -463,7 +463,7 @@
 /obj/item/ammo/bullets/garand_3006
 	sname = ".30-06 Springfield"
 	name = ".30-06 Garand clip"
-	desc = "A clip of .30-06 bullets. Why are these out here?"
+	desc = "A clip of .30-06 bullets. Age and space have degraded their propellant, but they still pack a punch."
 	ammo_type = new/datum/projectile/bullet/garand
 	icon_state = "garandclip"
 	amount_left = 8

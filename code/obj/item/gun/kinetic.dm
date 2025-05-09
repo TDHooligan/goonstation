@@ -3309,11 +3309,10 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 			shoot_delay = 3 DECI SECONDS
 
 /obj/item/gun/kinetic/garand
-	name = "\improper Garand"
-	desc = "Imported for its' iconic 'Ping' noise. But we're in space, so good luck hearing it."
-	icon = 'icons/obj/items/guns/kinetic48x32.dmi'
-	icon_state = "garand"
-	item_state = "garand"
+	name = "\improper M1 Garand"
+	desc = "A historic relic, chambered in 30-08. In space, nobody can hear you 'Ping'."
+	icon_state = "garand_classic"
+	item_state = "garand_classic"
 	wear_image_icon = 'icons/mob/clothing/back.dmi'
 	flags =  TABLEPASS | CONDUCT | USEDELAY
 	c_flags = EQUIPPED_WHILE_HELD
@@ -3337,10 +3336,24 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		set_current_projectile(new/datum/projectile/bullet/garand)
 		..()
 
+	gang
+		name = "\improper Garand"
+		desc = "A historic relic, debased with a cheap reflex sight and a fibreglass stock. In space, nobody can hear you 'Ping'."
+		icon = 'icons/obj/items/guns/kinetic48x32.dmi'
+		icon_state = "garand"
+		item_state = "garand"
+
+		New()
+			AddComponent(/datum/component/holdertargeting/sniper_scope, 12, 3200, /datum/overlayComposition/sniper_scope, 'sound/weapons/scope.ogg')
+			..()
+
+
+
 	shoot(turf/target, turf/start, mob/user, POX, POY, is_dual_wield, atom/called_target = null)
 		if (src.canshoot(user) && src.ammo?.amount_left == 1)
 			src.ammo.delete_on_reload = 1
-			playsound(user.loc, 'sound/weapons/garand_ping.ogg', 35, FALSE)
+			if (!istype(user.loc, /turf/space)) // tee hee
+				playsound(user.loc, 'sound/weapons/garand_ping.ogg', 35, FALSE)
 			var/obj/item/ammo/bullets/clip = new src.ammo.type
 			clip.amount_left = 0
 			clip.name = src.ammo.name
