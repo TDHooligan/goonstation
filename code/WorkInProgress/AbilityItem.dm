@@ -991,13 +991,19 @@
 
 /obj/ability_button/toggle_scope
 	name = "Toggle Scope"
+	var/icon_base = "scope"
 	icon_state = "scope_off"
 
 	execute_ability()
 		var/datum/component/holdertargeting/sniper_scope/scope = the_item.GetComponent(/datum/component/holdertargeting/sniper_scope)
 		SEND_SIGNAL(the_item, COMSIG_SCOPE_ENABLED, the_mob, !scope.enabled)
-		if (scope.enabled)
-			icon_state = "scope_on"
-		else
-			icon_state = "scope_off"
 		..()
+		if (scope.enabled)
+			icon_state = "[icon_base]_off"
+		else
+			icon_state = "[icon_base]_on"
+
+	sight
+		name = "Toggle Sights"
+		icon_state = "sight_on"
+		icon_base = "sight"

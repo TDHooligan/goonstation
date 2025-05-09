@@ -3345,15 +3345,17 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 		icon = 'icons/obj/items/guns/kinetic48x32.dmi'
 		icon_state = "garand"
 		item_state = "garand"
+		abilities = list(/obj/ability_button/toggle_scope/sight)
 
 		New()
-			AddComponent(/datum/component/holdertargeting/sniper_scope, 12, 3200, /datum/overlayComposition/sniper_scope, 'sound/weapons/scope.ogg')
+			AddComponent(/datum/component/holdertargeting/sniper_scope/light, 12, 224, /datum/overlayComposition/ironsight_vignette_scope, 'sound/weapons/scope.ogg')
 			..()
 
 
 
 	shoot(turf/target, turf/start, mob/user, POX, POY, is_dual_wield, atom/called_target = null)
 		if (src.canshoot(user) && src.ammo?.amount_left == 1)
+			..()
 			src.ammo.delete_on_reload = 1
 			if (!istype(user.loc, /turf/space)) // tee hee
 				playsound(user.loc, 'sound/weapons/garand_ping.ogg', 35, FALSE)
@@ -3368,7 +3370,8 @@ ABSTRACT_TYPE(/obj/item/survival_rifle_barrel)
 			clip.set_loc(user.loc)
 			clip.after_unload(user)
 			return TRUE
-		..()
+		else
+			..()
 
 
 // heavy
