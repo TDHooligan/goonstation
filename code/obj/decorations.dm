@@ -49,6 +49,7 @@
 	icon_state = "tree" // changed from 0
 	anchored = ANCHORED
 	layer = EFFECTS_LAYER_UNDER_3
+	provides_grip = TRUE
 
 	pixel_x = -20
 	density = 1
@@ -504,6 +505,9 @@ TYPEINFO(/obj/shrub/syndicateplant)
 		else
 			boutput(user, SPAN_ALERT("I don't think the Captain is going to be too happy about this..."))
 			user.visible_message(SPAN_ALERT("<b>[user] violently grazes on [src]!</b>"), SPAN_NOTICE("You voraciously devour the bonzai, what a feast!"))
+			if (ishuman(user))
+				var/mob/living/carbon/human/H = user
+				H.sims?.affectMotive("Hunger", 30)
 			src.interesting = "Inexplicably, the genetic code of the bonsai tree has the words 'fuck [user.real_name]' encoded in it over and over again."
 			src.destroy()
 			logTheThing(LOG_COMBAT, src, "was eaten by [constructTarget(user,"combat")] at [log_loc(src)].")
@@ -791,6 +795,7 @@ TYPEINFO(/obj/shrub/syndicateplant)
 	icon_state = "blind1"
 	anchored = ANCHORED
 	density = 0
+	var/working = TRUE
 	var/on = 0
 	var/id = null
 
@@ -826,7 +831,8 @@ TYPEINFO(/obj/shrub/syndicateplant)
 		src.UpdateIcon()
 
 	proc/toggle_group()
-		switched_obj_toggle(SWOB_BLINDS,src.id,!(src.on))
+		if (src.working)
+			switched_obj_toggle(SWOB_BLINDS,src.id,!(src.on))
 
 	attack_hand(mob/user)
 		. = ..()
