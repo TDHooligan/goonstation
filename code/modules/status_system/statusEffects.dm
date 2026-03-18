@@ -977,7 +977,9 @@
 				if (ismob(owner) && !QDELETED(owner))
 					var/mob/mob_owner = owner
 					APPLY_ATOM_PROPERTY(mob_owner, PROP_MOB_CANTMOVE, src.type)
-					owner.empty_hands()
+					if (isliving(owner))
+						var/mob/living/living_owner = owner
+						living_owner.empty_hands()
 
 			onRemove()
 				if (ismob(owner) && !QDELETED(owner))
