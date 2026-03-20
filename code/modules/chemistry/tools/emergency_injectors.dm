@@ -138,6 +138,7 @@
 /obj/item/reagent_containers/emergency_injector/empty
 	name = "emergency auto-injector"
 	desc = "An empty auto-injector with a proprietary injection port. Can be refilled with a pharmacist's <b>auto-injector filler</b>."
+	initial_volume = 20
 	can_fill = TRUE
 
 	orange
