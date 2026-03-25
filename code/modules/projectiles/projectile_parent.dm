@@ -41,6 +41,8 @@
 	var/turf/orig_turf
 	/// Degree of spread this projectile was fired with. Note that this informational, and doesn't affect the projectile's trajectory
 	var/spread = 0
+	/// The atom aimed at (clicked on) when this was fired
+	var/atom/desired_target
 
 	///Default dir, set to in do_step()
 	var/facing_dir = NORTH
