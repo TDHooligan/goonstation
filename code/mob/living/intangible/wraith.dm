@@ -297,8 +297,8 @@ TYPEINFO(/mob/living/intangible/wraith)
 			return TRUE
 
 
-	projCanHit(datum/projectile/P)
-		if (src.density || P.hits_wraiths) return 1
+	projCanHit(obj/projectile/P)
+		if (src.density || P.proj_data.hits_wraiths) return 1
 		else return FALSE
 
 

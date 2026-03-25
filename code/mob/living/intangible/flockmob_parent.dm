@@ -157,8 +157,8 @@ TYPEINFO(/mob/living/intangible/flock)
 			user.visible_message(SPAN_NOTICE("[user] waves [W] at [src.name]."), SPAN_NOTICE("You wave [W] at [src]."))
 
 // might as well give a dumb gimmick reaction to the ectoplasmic destabiliser
-/mob/living/intangible/flock/projCanHit(datum/projectile/P)
-	return P.hits_ghosts
+/mob/living/intangible/flock/projCanHit(obj/projectile/P)
+	return P.proj_data.hits_ghosts
 
 /mob/living/intangible/flock/Cross(atom/movable/mover)
 	if (istype(mover, /obj/projectile))

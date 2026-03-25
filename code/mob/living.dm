@@ -364,9 +364,9 @@ TYPEINFO(/mob/living)
 			observer.detach_hud(hud)
 	return ..()
 
-/mob/living/projCanHit(datum/projectile/P)
+/mob/living/projCanHit(obj/projectile/P)
 	if (!P) return 0
-	if (!src.lying || GET_COOLDOWN(src, "lying_bullet_dodge_cheese") || (src:lying && prob(P.hit_ground_chance))) return 1
+	if (!src.lying || GET_COOLDOWN(src, "lying_bullet_dodge_cheese") || (src:lying && prob(P.proj_data.hit_ground_chance)) || (P.desired_target && P.desired_target == src)) return 1
 	return 0
 
 /mob/living/proc/hand_attack(atom/target, params, location, control, origParams)

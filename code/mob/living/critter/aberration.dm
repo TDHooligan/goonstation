@@ -95,8 +95,8 @@ TYPEINFO(/mob/living/critter/aberration)
 		if (P.proj_data.hits_ghosts || (P.proj_data.damage_type == D_ENERGY && round(P.power * (1 - P.proj_data.ks_ratio), 1) > 1))
 			src.hurt(100)
 
-	projCanHit(datum/projectile/P)
-		return P.damage_type == D_ENERGY
+	projCanHit(obj/projectile/P)
+		return P.proj_data.damage_type == D_ENERGY
 
 	do_disorient(stamina_damage, knockdown, stunned, unconscious, disorient = 60, remove_stamina_below_zero = 0, target_type = DISORIENT_BODY, stack_stuns = 1)
 		return

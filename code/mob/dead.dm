@@ -69,9 +69,9 @@ TYPEINFO(/mob/dead)
 		O.set_loc(get_turf(src))
 	. = ..()
 
-/mob/dead/projCanHit(datum/projectile/P)
+/mob/dead/projCanHit(obj/projectile/P)
 	// INVIS_ALWAYS ghosts are logged out/REALLY hidden.
-	return (P.hits_ghosts && (src.invisibility != INVIS_ALWAYS))
+	return (P.proj_data.hits_ghosts && (src.invisibility != INVIS_ALWAYS))
 
 /mob/dead/emote(var/act, var/voluntary = 0) // fart
 	if (!global.SpeechManager.GetSayChannelInstance(SAY_CHANNEL_DEAD).enabled)

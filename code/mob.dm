@@ -1586,7 +1586,7 @@ TYPEINFO(/mob)
 
 /mob/Cross(atom/movable/mover)
 	if (istype(mover, /obj/projectile))
-		return !projCanHit(mover:proj_data)
+		return !projCanHit(mover)
 
 
 	if (ismob(mover))

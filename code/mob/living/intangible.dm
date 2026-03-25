@@ -46,7 +46,7 @@ TYPEINFO(/mob/living/intangible)
 	MouseDrop_T()
 		return
 
-	projCanHit(datum/projectile/P)
+	projCanHit(obj/projectile/P)
 		return 0
 
     //can't electrocute intangible things

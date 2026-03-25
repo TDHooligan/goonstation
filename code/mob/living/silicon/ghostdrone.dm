@@ -1100,7 +1100,7 @@ TYPEINFO(/mob/living/silicon/ghostdrone)
 		if (C.tg_controls)
 			C.apply_keybind("drone_tg")
 
-	projCanHit(datum/projectile/P)
+	projCanHit(obj/projectile/P)
 		. = ..()
 		if(isdead(src))
 			return FALSE
