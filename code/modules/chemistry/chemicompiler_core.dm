@@ -297,7 +297,7 @@ var/list/datum/chemicompiler_core/chemicompilers = list()
 					var/heatTo = (T0C - tx) + ax
 					heatReagents(sx, heatTo)
 				if("@") //transfer
-					loopUsed = tx > 10 ? 45 : src.maxOperations //output is more expensive
+					loopUsed = src.maxOperations
 					transferReagents(sx, tx, ax)
 				/*if("?") //compare *ptr to sx, using operation tx, store result in ax
 					switch(tx)
@@ -316,7 +316,7 @@ var/list/datum/chemicompiler_core/chemicompilers = list()
 						else
 							ax = 0*/
 				if("#") //move individual reagent from container
-					loopUsed = tx > 10 ? 45 : 30 //output is more expensive
+					loopUsed = src.maxOperations
 					isolateReagent(sx, tx, ax, data[dp+1])
 				if("*")
 					awaiting_reaction_tick = 1
