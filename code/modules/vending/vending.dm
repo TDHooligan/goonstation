@@ -20,7 +20,6 @@
 			qdel(src)
 			return
 		src.product_path = productpath
-		src.AddComponent(/datum/component/projectile_cover)
 
 		var/name_check = product_name_cache[productpath]
 		if (name_check)
@@ -156,6 +155,7 @@ ADMIN_INTERACT_PROCS(/obj/machinery/vending, proc/throw_item)
 
 		AddComponent(/datum/component/mechanics_holder)
 		AddComponent(/datum/component/bullet_holes, 8, 5)
+		AddComponent(/datum/component/projectile_cover)
 		if (uses_mechcomp)
 			SEND_SIGNAL(src,COMSIG_MECHCOMP_ADD_INPUT,"Vend Random", PROC_REF(vendinput))
 			SEND_SIGNAL(src,COMSIG_MECHCOMP_ADD_INPUT,"Vend by Name", PROC_REF(vendname))
