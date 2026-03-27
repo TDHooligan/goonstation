@@ -831,6 +831,7 @@
 		used_by = list()
 		reward_item_pool = list(/obj/item/paper/rituals, /obj/item/sacdagger,/obj/item/thaumometer, /obj/item/ritualskull, /obj/item/ritualChalk/randomColor, /obj/item/ritualChalk)
 		spacebux_consumed_total = world.load_intra_round_value("altar_spacebux_consumed")
+		src.AddComponent(/datum/component/projectile_cover)
 		src.RegisterSignal(GLOBAL_SIGNAL, COMSIG_GLOBAL_REBOOT, PROC_REF(save_spacebux_consumed))
 
 	proc/save_spacebux_consumed()

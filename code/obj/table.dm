@@ -52,6 +52,7 @@ TYPEINFO_NEW(/obj/table)
 			xmasify()
 		#endif
 
+		src.AddComponent(/datum/component/projectile_cover)
 		SPAWN(0)
 			if (src.auto && src.materialless_icon_state() == "0") // if someone's set up a special icon state don't mess with it
 				src.set_up()

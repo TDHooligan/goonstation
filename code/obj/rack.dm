@@ -18,6 +18,7 @@
 /obj/rack/New()
 	..()
 	var/bonus = 0
+	src.AddComponent(/datum/component/projectile_cover)
 	for (var/obj/O in loc)
 		if (isitem(O))
 			bonus += 4

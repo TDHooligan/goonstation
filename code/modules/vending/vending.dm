@@ -20,6 +20,7 @@
 			qdel(src)
 			return
 		src.product_path = productpath
+		src.AddComponent(/datum/component/projectile_cover)
 
 		var/name_check = product_name_cache[productpath]
 		if (name_check)

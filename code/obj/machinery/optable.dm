@@ -21,6 +21,7 @@ TYPEINFO(/obj/machinery/optable)
 
 /obj/machinery/optable/New()
 	..()
+	src.AddComponent(/datum/component/projectile_cover)
 	SPAWN(0.5 SECONDS)
 		src.computer = locate(/obj/machinery/computer/operating, orange(2,src))
 
