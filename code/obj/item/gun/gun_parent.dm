@@ -427,10 +427,10 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 
 	spread += (recoil/recoil_max) * recoil_inaccuracy_max
 
-	var/obj/projectile/P = shoot_projectile_ST_pixel_spread(user, current_projectile, target, POX, POY, spread, alter_proj = new/datum/callback(src, PROC_REF(alter_projectile)), called_target = called_target)
+	var/obj/projectile/P = shoot_projectile_ST_pixel_spread(user, current_projectile, target, POX, POY, spread, user.lying, alter_proj = new/datum/callback(src, PROC_REF(alter_projectile)), called_target = called_target)
 	if (P)
 		P.forensic_ID = src.forensic_ID
-		if (called_target)
+		if (called_target && recoil == 0)
 			P.desired_target = called_target
 		if(isobj(P.implanted))
 			var/obj/O = P.implanted

@@ -366,8 +366,33 @@ TYPEINFO(/mob/living)
 
 /mob/living/projCanHit(obj/projectile/P)
 	if (!P) return 0
-	if (!src.lying || GET_COOLDOWN(src, "lying_bullet_dodge_cheese") || (src:lying && prob(P.proj_data.hit_ground_chance)) || (P.desired_target && P.desired_target == src)) return 1
-	return 0
+	if (src.lying)
+		// Ducking behind tables blocks bullets, unless the shooter is close.
+		if (P.cover_last_passed && P.travelled - P.cover_last_passed < 64 && P.travelled > 80)
+			if (src?.bioHolder.HasEffect("clumsy") && !is_incapacitated(src) && prob(50)) // :o) honk
+				src.delStatus("resting")
+				if (ishuman(src))
+					var/mob/living/carbon/human/H = src
+					H.hud.update_resting()
+				src.force_laydown_standup()
+				src.visible_message(SPAN_ALERT("<b>[src]</b> pokes [his_or_her(src)] head up and gets hit with \the [P.name]!."))
+				return 1
+			if (!ON_COOLDOWN(src, "bullet_whiz_alert", 3 SECONDS))
+				src.show_text("A projectile whizzes over your head!", "red")
+				if (P.desired_target == src) // let the shooter (and others) know more directly this miss was due to cover.
+					P.visible_message(SPAN_ALERT("\The [P.name] flies over [src.name]!"))
+				hit_twitch(src)
+			return 0
+
+		// If the shooter is aiming for the prone mob, give them a greater chance to hit.
+		if (P.desired_target && P.desired_target == src)
+			return prob(clamp(100-(P.travelled/32 * P.spread), P.proj_data.hit_ground_chance, 100))
+
+		// Otherwise just use hit_ground_chance
+		if (GET_COOLDOWN(src, "lying_bullet_dodge_cheese") || (src:lying && prob(P.proj_data.hit_ground_chance)) )
+			return 1
+		return 0
+	return 1
 
 /mob/living/proc/hand_attack(atom/target, params, location, control, origParams)
 	target.Attackhand(src, params, location, control, origParams)
