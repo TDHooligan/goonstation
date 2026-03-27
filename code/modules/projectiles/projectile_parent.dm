@@ -318,7 +318,7 @@
 
 	/// Handle flying over tables/barricades, for the sake of flying over prone players.
 	proc/handle_flyover()
-		if src.pierces_left > 0 || goes_through_walls || goes_through_mobs return // if this can pierce, assume the table/whatever is just being shot through.
+		if (src.pierces_left > 0 || goes_through_walls || goes_through_mobs) return // if this can pierce, assume the table/whatever is just being shot through.
 		src.cover_last_passed = src.travelled
 
 	// Awful var names. TODO rename pretty much everything here, or at least document the functions

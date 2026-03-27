@@ -47,7 +47,8 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 	var/fire_animation = FALSE //Used for guns that have animations when firing
 	var/safe_spin = FALSE //! Can this gun be *spin emoted without a chance to shoot yourself?
 
-
+	var/current_target //! Who the gun was most recently 'aimed' at. Used for breaking cover & shooting prone people.
+	var/target_image //! The image used to mark the current target, if any.
 
 	var/recoil = 0 //! current cumulative recoil value, for inaccuracy. leave at 0
 	var/recoil_last_shot //! last time this was fired, for recoil purposes
@@ -430,8 +431,18 @@ var/list/forensic_IDs = new/list() //Global list of all guns, based on bioholder
 	var/obj/projectile/P = shoot_projectile_ST_pixel_spread(user, current_projectile, target, POX, POY, spread, user.lying, alter_proj = new/datum/callback(src, PROC_REF(alter_projectile)), called_target = called_target)
 	if (P)
 		P.forensic_ID = src.forensic_ID
-		if (called_target && recoil == 0)
-			P.desired_target = called_target
+		if (recoil == 0 && called_target && ismob(called_target) && !ON_COOLDOWN(src, "aim_timer", 2 SECONDS))
+			current_target = called_target
+			target_image = image(icon('icons/effects/effects.dmi', "target_flash"), current_target)
+			user.client?.images += target_image
+			SPAWN(2 SECONDS)
+				if (isobj(target_image))
+					qdel(target_image)
+					target_image = null
+		if (!GET_COOLDOWN(src, "aim_timer"))
+			current_target = FALSE
+		if (current_target)
+			P.desired_target = current_target
 		if(isobj(P.implanted))
 			var/obj/O = P.implanted
 			O.forensic_holder = P.forensic_holder
