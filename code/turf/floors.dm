@@ -1545,7 +1545,7 @@ TYPEINFO(/turf/simulated/floor/grass)
 	mat_changedesc = 0
 	step_material = "step_outdoors"
 	step_priority = STEP_PRIORITY_MED
-	default_material = "synthrubber"
+	default_material = "synthrubber_green"
 	can_dig = TRUE
 
 	#ifdef SEASON_WINTER
@@ -2387,7 +2387,7 @@ DEFINE_FLOORS(solidcolor/black/fullbright,
 
 /turf/simulated/floor/restore_tile(do_hide = TRUE)
 	..()
-	if (!do_hide)
+	if (!do_hide || (locate(/obj/table) in src))
 		return
 	for (var/obj/item/item in src.contents)
 		if (item.w_class <= W_CLASS_TINY && !item.anchored) //I wonder if this will cause problems

@@ -74,8 +74,8 @@
 					boutput(human_owner, SPAN_ALERT("You feel your insides [pick("squirm", "shift", "wiggle", "float")] uncomfortably in low-gravity."), "grav-life")
 					human_owner.nauseate(1)
 				if (2) // stamina sap
-					if (human_owner.traction == TRACTION_FULL)
-						return // unless you're on solid footing
+					if (human_owner.traction == TRACTION_FULL || human_owner.buckled)
+						return // unless you're on solid footing or buckled in
 					if (istype(human_owner.back, /obj/item/tank/jetpack))
 						var/obj/item/tank/jetpack/J = human_owner.back
 						if(J.allow_thrust(0.01, human_owner))
@@ -117,7 +117,7 @@
 					boutput(src.owner, SPAN_ALERT("Your entire being strains against the immense gravity. <b>Staying here is not safe!</b>"), "grav_gib_warning")
 					src.gib_counter += 0.69
 					return // slow people down from dying a lil bit so they gib >:o)
-			if (probmult(gforce * 4)) // ~9% minimum
+			if (probmult(gforce/GFORCE_EARTH_GRAVITY * 4)) // ~9% minimum
 				var/damage = max(rand(GFORCE_MOB_EXTREME_THRESHOLD, gforce), GFORCE_MOB_GREYOUT_THRESHOLD)/GFORCE_EARTH_GRAVITY
 				if (human_owner)
 					switch(rand(1, 3))

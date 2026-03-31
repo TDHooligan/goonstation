@@ -14,7 +14,7 @@ TYPEINFO(/obj/machinery/clone_scanner)
 	var/locked = 0
 	var/mob/occupant = null
 	anchored = ANCHORED
-	soundproofing = 10
+	soundproofing = SOUNDPROOFING_MUFFLED
 	event_handler_flags = USE_FLUID_ENTER
 	var/obj/machinery/computer/cloning/connected = null
 
@@ -117,7 +117,7 @@ TYPEINFO(/obj/machinery/clone_scanner)
 
 		src.add_fingerprint(user)
 		src.connected?.updateUsrDialog()
-
+		logTheThing(LOG_COMBAT, user, "moves [M] into [src].")
 		playsound(src.loc, 'sound/machines/sleeper_close.ogg', 50, 1)
 
 	attack_hand(mob/user)

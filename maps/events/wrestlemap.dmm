@@ -309,7 +309,7 @@
 /obj/cable{
 	icon_state = "4-8"
 	},
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	pixel_y = 12
 	},
 /obj/landmark/start/job/assistant,
@@ -499,8 +499,7 @@
 "ahJ" = (
 /obj/machinery/door/airlock/pyro/glass{
 	dir = 4;
-	name = "Security";
-	req_access_txt = "1"
+	name = "Security"
 	},
 /obj/mapping_helper/firedoor_spawn,
 /obj/disposalpipe/segment/horizontal,
@@ -1648,7 +1647,7 @@
 /turf/simulated/floor/plating,
 /area/station/maintenance/inner/the_cage)
 "aHK" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -6
 	},
@@ -5571,7 +5570,6 @@
 /obj/stool/chair/office{
 	dir = 4
 	},
-/obj/landmark/start/job/medical_doctor,
 /turf/simulated/floor/specialroom/gym,
 /area/station/medical/medbay/pharmacy)
 "cvs" = (
@@ -5785,6 +5783,7 @@
 	icon_state = "bot2";
 	tag = ""
 	},
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/specialroom/arcade,
 /area/station/science/chemistry)
 "cAv" = (
@@ -6082,7 +6081,7 @@
 	},
 /area/station/medical/medbay/pharmacy)
 "cIb" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -4
 	},
@@ -6565,6 +6564,7 @@
 /area/station/hallway/primary/central)
 "cXv" = (
 /obj/machinery/chem_dispenser/chemical,
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/bluewhite{
 	dir = 1
 	},
@@ -7239,7 +7239,7 @@
 /turf/simulated/floor,
 /area/station/crew_quarters/captain)
 "dmK" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	pixel_y = 8
 	},
 /obj/machinery/camera/directional/north{
@@ -8044,7 +8044,7 @@
 /turf/simulated/shuttle/wall/cockpit,
 /area/shuttle/arrival/station)
 "dBi" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	pixel_y = 8
 	},
 /obj/disposalpipe/segment/morgue{
@@ -10265,7 +10265,7 @@
 /turf/simulated/floor/carpet/red/fancy,
 /area/station/crew_quarters/lounge/luxury_seating)
 "exZ" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -10507,7 +10507,7 @@
 /turf/simulated/floor/orange,
 /area/station/engine/storage)
 "eEb" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 1;
 	tag = "icon-sink (NORTH)"
 	},
@@ -11890,7 +11890,7 @@
 	},
 /area/station/hallway/primary/south)
 "fnd" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -13094,10 +13094,9 @@
 /obj/machinery/cashreg,
 /obj/table/reinforced/chemistry/auto,
 /obj/machinery/door/airlock/pyro/glass/windoor{
-	autoclose = 0;
-	dir = 1
+	autoclose = 0
 	},
-/obj/mapping_helper/access/medical,
+/obj/mapping_helper/access/pharmacy,
 /obj/mapping_helper/firedoor_spawn,
 /turf/simulated/floor/white,
 /area/station/medical/medbay/pharmacy)
@@ -13151,7 +13150,7 @@
 /obj/item/disk/data/floppy/read_only/medical_progs,
 /obj/item/disk/data/floppy/read_only/network_progs,
 /obj/item/disk/data/floppy/computer3boot,
-/obj/item/disk/data/fixed_disk,
+/obj/item/disk/data/fixed_disk/hd64,
 /obj/item/disk/data/floppy/read_only/security_progs,
 /turf/simulated/floor/grey,
 /area/station/storage/tech)
@@ -13213,7 +13212,7 @@
 /turf/simulated/floor/wood/two,
 /area/station/security/detectives_office)
 "fSj" = (
-/obj/landmark/start/job/medical_doctor,
+/obj/landmark/start/job/pharmacist,
 /obj/stool/chair/office{
 	dir = 8
 	},
@@ -14114,11 +14113,10 @@
 /obj/table/reinforced/chemistry/auto,
 /obj/item/paper_bin,
 /obj/item/pen/pencil,
-/obj/mapping_helper/access/medical,
+/obj/mapping_helper/access/pharmacy,
 /obj/mapping_helper/firedoor_spawn,
 /obj/machinery/door/airlock/pyro/glass/windoor{
-	autoclose = 0;
-	dir = 1
+	autoclose = 0
 	},
 /turf/simulated/floor/white,
 /area/station/medical/medbay/pharmacy)
@@ -14866,6 +14864,7 @@
 /area/station/hallway/primary/south)
 "gIB" = (
 /obj/machinery/chem_dispenser/chemical,
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/carpet/green/standard/edge/west,
 /area/station/crew_quarters/bar)
 "gIE" = (
@@ -15542,7 +15541,7 @@
 	},
 /area/station/security/processing)
 "gXP" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -16069,7 +16068,6 @@
 "hkT" = (
 /obj/table/reinforced/chemistry/auto,
 /obj/item/storage/box/beakerbox,
-/obj/item/reagent_containers/glass/beaker/large,
 /turf/simulated/floor/specialroom/arcade,
 /area/station/science/chemistry)
 "hlq" = (
@@ -17403,11 +17401,11 @@
 /area/station/chapel/sanctuary)
 "hPk" = (
 /obj/machinery/chem_dispenser/soda,
-/obj/item/reagent_containers/food/drinks/drinkingglass/pitcher,
 /obj/machinery/light/incandescent/warm/very{
 	dir = 4;
 	pixel_x = 10
 	},
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/carpet/green/fancy/junction/sw_n,
 /area/station/crew_quarters/jazz)
 "hPw" = (
@@ -18667,11 +18665,10 @@
 /area/station/security/checkpoint/arrivals)
 "ixo" = (
 /obj/table/reinforced/chemistry/auto,
-/obj/mapping_helper/access/medical,
+/obj/mapping_helper/access/pharmacy,
 /obj/mapping_helper/firedoor_spawn,
 /obj/machinery/door/airlock/pyro/glass/windoor{
-	autoclose = 0;
-	dir = 1
+	autoclose = 0
 	},
 /turf/simulated/floor/white,
 /area/station/medical/medbay/pharmacy)
@@ -19556,7 +19553,7 @@
 /turf/simulated/floor/white,
 /area/station/science/lab)
 "iPR" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -6
 	},
@@ -21731,11 +21728,6 @@
 /turf/simulated/floor/shuttlebay,
 /area/station/hangar/science)
 "jIX" = (
-/obj/machinery/door/airlock/pyro/security{
-	name = "Armory";
-	req_access = null
-	},
-/obj/mapping_helper/firedoor_spawn,
 /obj/cable{
 	icon_state = "1-2"
 	},
@@ -21743,7 +21735,10 @@
 	dir = 6;
 	icon_state = "delivery2"
 	},
+/obj/machinery/door/airlock/pyro/weapons/secure,
 /obj/mapping_helper/access/armory,
+/obj/mapping_helper/firedoor_spawn,
+/obj/mapping_helper/airlock/aiDisabler,
 /turf/simulated/floor/black,
 /area/station/ai_monitored/armory)
 "jJa" = (
@@ -22080,7 +22075,6 @@
 	pixel_x = 10
 	},
 /obj/machinery/chem_shaker/large/chemistry,
-/obj/item/reagent_containers/glass/beaker/large,
 /turf/simulated/floor/specialroom/arcade,
 /area/station/science/chemistry)
 "jQL" = (
@@ -24240,10 +24234,10 @@
 	tag = ""
 	},
 /obj/disposalpipe/segment/mail/vertical,
-/obj/item/reagent_containers/glass/beaker/large,
 /obj/machinery/status_display{
 	pixel_y = 30
 	},
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/black,
 /area/station/medical/head)
 "kPv" = (
@@ -25434,6 +25428,7 @@
 "lve" = (
 /obj/machinery/chem_dispenser/alcohol,
 /obj/decal/cleanable/cobweb,
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/plating,
 /area/station/maintenance/inner/the_cage)
 "lvi" = (
@@ -28580,7 +28575,7 @@
 	name = "Surgery"
 	},
 /obj/mapping_helper/firedoor_spawn,
-/obj/mapping_helper/access/medical,
+/obj/mapping_helper/access/pharmacy,
 /obj/cable{
 	icon_state = "1-2"
 	},
@@ -28999,7 +28994,7 @@
 /obj/machinery/atmospherics/pipe/simple{
 	dir = 4
 	},
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -6
 	},
@@ -29549,7 +29544,7 @@
 /turf/simulated/wall/auto/reinforced/supernorn,
 /area/station/hallway/primary/west)
 "noT" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -29807,11 +29802,10 @@
 "nug" = (
 /obj/table/reinforced/chemistry/auto,
 /obj/disposalpipe/segment,
-/obj/mapping_helper/access/medical,
+/obj/mapping_helper/access/pharmacy,
 /obj/mapping_helper/firedoor_spawn,
 /obj/machinery/door/airlock/pyro/glass/windoor{
-	autoclose = 0;
-	dir = 1
+	autoclose = 0
 	},
 /turf/simulated/floor/white,
 /area/station/medical/medbay/pharmacy)
@@ -32808,7 +32802,7 @@
 /turf/simulated/floor/caution,
 /area/station/engine/engineering)
 "oJQ" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -6
 	},
@@ -34042,10 +34036,10 @@
 	layer = 9.1;
 	pixel_x = -10
 	},
-/obj/item/reagent_containers/food/drinks/drinkingglass/pitcher,
 /obj/cable{
 	icon_state = "1-2"
 	},
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/plating,
 /area/station/crew_quarters/bar)
 "poi" = (
@@ -34505,7 +34499,7 @@
 	layer = 9.1;
 	pixel_y = 21
 	},
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	pixel_y = 8
 	},
 /turf/simulated/floor/redwhite{
@@ -35180,7 +35174,7 @@
 /turf/simulated/floor/plating,
 /area/station/maintenance/east)
 "pRj" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -35427,7 +35421,7 @@
 /area/station/security/processing)
 "pXg" = (
 /obj/machinery/chem_dispenser/soda,
-/obj/item/reagent_containers/food/drinks/drinkingglass/pitcher,
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/carpet/green/decal,
 /area/station/crew_quarters/bar)
 "pXi" = (
@@ -36860,15 +36854,14 @@
 "qDP" = (
 /obj/machinery/door/airlock/pyro/glass{
 	dir = 4;
-	name = "Locker Room";
-	req_access_txt = "1"
+	name = "Locker Room"
 	},
 /obj/mapping_helper/firedoor_spawn,
 /obj/cable{
 	icon_state = "4-8"
 	},
-/obj/mapping_helper/access/sec_lockers,
 /obj/decal/stripe_delivery,
+/obj/mapping_helper/access/security,
 /turf/simulated/floor,
 /area/station/security/secoffquarters)
 "qEb" = (
@@ -37949,10 +37942,10 @@
 /area/station/science/lobby)
 "rhG" = (
 /obj/machinery/chem_dispenser/alcohol,
-/obj/item/reagent_containers/food/drinks/drinkingglass/pitcher,
 /obj/machinery/firealarm/directional/east{
 	pixel_y = 1
 	},
+/obj/mapping_helper/glassware_spawn,
 /turf/simulated/floor/carpet/green/fancy/edge/se,
 /area/station/crew_quarters/jazz)
 "rhT" = (
@@ -38709,7 +38702,7 @@
 /turf/space,
 /area/space)
 "rzi" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -38752,7 +38745,7 @@
 /turf/simulated/floor/dirt,
 /area/station/ranch)
 "rzx" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -6
 	},
@@ -40192,7 +40185,7 @@
 /turf/simulated/floor/white/grime,
 /area/station/bridge)
 "smR" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8;
 	pixel_x = 6
 	},
@@ -43453,7 +43446,6 @@
 /area/station/mining/staff_room)
 "tJz" = (
 /obj/item/storage/box/beakerbox,
-/obj/item/reagent_containers/glass/beaker/large,
 /obj/table/reinforced/chemistry/auto,
 /turf/simulated/floor/specialroom/arcade,
 /area/station/science/chemistry)
@@ -44619,8 +44611,7 @@
 "uoT" = (
 /obj/machinery/door/airlock/pyro/glass{
 	dir = 4;
-	name = "Security";
-	req_access_txt = "1"
+	name = "Security"
 	},
 /obj/mapping_helper/firedoor_spawn,
 /obj/mapping_helper/access/security,
@@ -46149,7 +46140,7 @@
 /obj/machinery/camera/directional/west{
 	pixel_y = -10
 	},
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 4;
 	pixel_x = -6
 	},
@@ -46435,7 +46426,7 @@
 /turf/simulated/floor/plating,
 /area/station/ai_monitored/storage/eva)
 "vgl" = (
-/obj/submachine/chef_sink{
+/obj/machinery/sink{
 	dir = 8
 	},
 /obj/item/device/radio/intercom/catering{
@@ -49608,7 +49599,7 @@
 /obj/cable{
 	icon_state = "4-8"
 	},
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	pixel_y = 12
 	},
 /turf/simulated/floor/sanitary/white,
@@ -50625,7 +50616,7 @@
 	name = "Security Lobby"
 	})
 "wXj" = (
-/obj/submachine/chef_sink/chem_sink{
+/obj/machinery/sink/slim{
 	dir = 8
 	},
 /turf/simulated/floor/purpleblack{
@@ -50674,8 +50665,7 @@
 "wXN" = (
 /obj/machinery/door/airlock/pyro/glass{
 	dir = 4;
-	name = "Security";
-	req_access_txt = "1"
+	name = "Security"
 	},
 /obj/mapping_helper/firedoor_spawn,
 /obj/disposalpipe/segment/horizontal,
@@ -52575,7 +52565,7 @@
 /turf/simulated/floor/black,
 /area/station/crew_quarters/quarters_south)
 "xRd" = (
-/obj/submachine/chef_sink{
+/obj/machinery/sink{
 	dir = 8
 	},
 /turf/simulated/floor/white/grime,
@@ -52950,6 +52940,12 @@
 /obj/machinery/atmospherics/unary/outlet_injector/active{
 	dir = 4
 	},
+/obj/item/storage/box/trackimp_kit{
+	pixel_y = 6
+	},
+/obj/item/storage/box/PDAbox{
+	pixel_y = -5
+	},
 /turf/simulated/floor/black,
 /area/station/bridge)
 "xZx" = (
@@ -53057,11 +53053,8 @@
 /area/station/maintenance/solar/north)
 "ybM" = (
 /obj/table/glass/auto,
-/obj/item/storage/box/trackimp_kit{
-	pixel_y = 6
-	},
-/obj/item/storage/box/PDAbox{
-	pixel_y = -5
+/obj/machinery/shredder{
+	pixel_y = 10
 	},
 /turf/simulated/floor/carpet/blue/standard/edge/ne,
 /area/station/bridge)
@@ -85061,7 +85054,7 @@ rSz
 rSz
 rSz
 irp
-hyJ
+uAH
 aTU
 cXv
 fjH

@@ -178,16 +178,6 @@ ADMIN_INTERACT_PROCS(/mob/living/critter/small_animal/mouse, proc/glorp)
 				bleed(H, rand(5,8), 5)
 				H.contract_disease(pick(src.disease_types), null, null, 1)
 
-//for mice spawned by plaguerat dens
-/mob/living/critter/small_animal/mouse/mad/rat_den
-	var/obj/machinery/wraith/rat_den/linked_den = null
-	player_can_spawn_with_pet = FALSE
-	shiny_chance = 0
-
-	death()
-		if(linked_den?.linked_critters > 0)
-			linked_den.linked_critters--
-		..()
 /* -------------------- Remy -------------------- */
 
 /mob/living/critter/small_animal/mouse/remy
@@ -238,8 +228,8 @@ ADMIN_INTERACT_PROCS(/mob/living/critter/small_animal/mouse, proc/glorp)
 			return
 		src.visible_message("[src] sniffs \the [food].")
 		var/list/possible_recipes = list()
-		for (var/datum/cookingrecipe/recipe in global.oven_recipes)
-			if (istypes(food, recipe.ingredients))
+		for (var/datum/recipe/recipe in global.oven_recipes)
+			if (recipe.type_in_ingredients(food))
 				possible_recipes += recipe
 		src.set_dir(get_dir(src, user))
 		src.ai.disable()
@@ -248,12 +238,21 @@ ADMIN_INTERACT_PROCS(/mob/living/critter/small_animal/mouse, proc/glorp)
 				if (length(possible_recipes) > 2)
 					possible_recipes -= src.last_recipe
 				src.emote("scream")
-				var/datum/cookingrecipe/chosen = pick(possible_recipes)
+				var/datum/recipe/chosen = pick(possible_recipes)
 				boutput(user, chosen.render())
 			else
 				src.visible_message("[src] shakes [his_or_her(src)] head sadly.")
 			sleep(1 SECOND)
 			src.ai.enable()
+
+	specific_emotes(var/act, var/param = null, var/voluntary = 0)
+		switch (act)
+			if ("scream")
+				if (src.emote_check(voluntary, 50))
+					playsound(src, 'sound/voice/animal/mouse_squeak.ogg', 80, TRUE, channel=VOLUME_CHANNEL_EMOTE)
+					FLICK("remy-exclaim", src)
+					return SPAN_EMOTE("<b>[src]</b> squeaks!")
+		return ..()
 
 /* =============================================== */
 /* ----------- mentor & admin mice --------------- */

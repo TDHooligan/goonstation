@@ -121,6 +121,10 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/unary/drain)
 	drain_min = 10
 	drain_max = 15
 
+/obj/machinery/fluid_machinery/unary/drain/inlet_pump/active
+	on = TRUE
+	icon_state = "inlet1"
+
 /obj/machinery/fluid_machinery/unary/drain/inlet_pump/proc/activate()
 
 
@@ -158,6 +162,11 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/unary/drain)
 
 /obj/machinery/fluid_machinery/unary/drain/inlet_pump/overfloor
 	level = OVERFLOOR
+
+/obj/machinery/fluid_machinery/unary/drain/inlet_pump/overfloor/active
+	on = TRUE
+	icon_state = "inlet1"
+
 
 /obj/machinery/fluid_machinery/unary/hand_pump
 	name = "hand pump"
@@ -334,7 +343,7 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/unary/drain)
 	name = "dispenser"
 	icon_state = "dispenser"
 	desc = "Fills itself with fluid and dispenses patches, pills, and vials when reaching the set amount or when prompted to."
-	HELP_MESSAGE_OVERRIDE("FYou can use a <b>multitool</b> to modify its settings.")
+	HELP_MESSAGE_OVERRIDE("You can use a <b>multitool</b> to modify its settings.")
 	var/automatic = TRUE
 	var/max = 50
 	var/min = 1
@@ -414,6 +423,103 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/unary/drain)
 		return
 	src.dispense()
 
+/obj/machinery/fluid_machinery/unary/sensor
+	name = "float sensor"
+	icon_state = "sensor"
+	desc = "Will send an alert once the network's capacity is greater then the set threshold of the sensor."
+	HELP_MESSAGE_OVERRIDE("You can use a <b>multitool</b> to modify its trigger threshold or radio frequency.")
+	var/Threshold_Min = 0
+	var/Threshold_Max = 100000
+	var/signal_threshold = 1000
+	var/check_timer = 5 SECONDS
+	var/triggered = null //To stop PDA spam
+	//For PDA/signal alert stuff
+	var/pda_mode = TRUE
+	var/list/mailgroups = list(MGT_JANITOR, MGA_PLUMBING)
+	var/alert_frequency = FREQ_PDA
+	var/filtration = null // used to give a unique message for roundstart sewage sensors
+
+/obj/machinery/fluid_machinery/unary/sensor/New()
+	..()
+	AddComponent(/datum/component/mechanics_holder)
+	SEND_SIGNAL(src,COMSIG_MECHCOMP_ADD_CONFIG,"Set Threshold", PROC_REF(set_threshold_manual))
+	SEND_SIGNAL(src,COMSIG_MECHCOMP_ADD_CONFIG,"Set Frequency", PROC_REF(set_frequency_manual))
+	SEND_SIGNAL(src,COMSIG_MECHCOMP_ADD_CONFIG,"Toggle Message Alerts", PROC_REF(toggle_alerts))
+
+// Robbed from implant code
+/obj/machinery/fluid_machinery/unary/sensor/proc/send_message(message, alertgroup, sender_name)
+	DEBUG_MESSAGE("sending message: [message]")
+	var/datum/component/packet_connected/radio/radio_connection = MAKE_SENDER_RADIO_PACKET_COMPONENT(null, null, alert_frequency)
+	var/datum/signal/newsignal = get_free_signal()
+	var/net_id = generate_net_id(src)
+	if (message)
+		newsignal.source = src
+		newsignal.data["command"] = "text_message"
+		newsignal.data["sender_name"] = sender_name
+		newsignal.data["message"] = message
+
+		newsignal.data["address_1"] = "00000000"
+		newsignal.data["group"] = mailgroups
+		newsignal.data["sender"] = net_id
+
+		SEND_SIGNAL(src, COMSIG_MOVABLE_POST_RADIO_PACKET, newsignal)
+		qdel(radio_connection)
+
+/obj/machinery/fluid_machinery/unary/sensor/process()
+	if(GET_COOLDOWN(src, "sensor_check")) return
+	if (!src.network) return
+	SEND_SIGNAL(src,COMSIG_MECHCOMP_TRANSMIT_SIGNAL, "[src.network.reagents.total_volume]")
+	SEND_SIGNAL(src,COMSIG_MECHCOMP_TRANSMIT_SIGNAL, "[src.network.reagents.reagent_list]")
+	if(triggered && src.network.reagents.total_volume < signal_threshold) // Has it gone below the threshold to reset the PDA alerts?
+		triggered = 0
+	if (src.network.reagents.total_volume >= signal_threshold && pda_mode && !triggered)
+		FLICK("sensor0",src)
+		var/myarea = get_area(src)
+		var/message = null //not 4 long
+		if(!filtration)
+			message = "PLUMBING NETWORK BACKUP ALERT: [src] in [myarea]."
+		else
+			message = "SEWAGE BACKUP ALERT: [src] in [myarea]."
+		src.send_message(message, mailgroups, "PLUMBING-MAILBOT")
+		triggered = 1
+	ON_COOLDOWN(src, "sensor_check", check_timer)
+
+/obj/machinery/fluid_machinery/unary/sensor/proc/set_threshold(var/datum/mechanicsMessage/input)
+	var/newthreshold = text2num_safe(input.signal)
+	if (!newthreshold)
+		return
+	src.signal_threshold = round(clamp(newthreshold, 0, src.network.reagents.total_volume), QUANTIZATION_UNITS)
+	logTheThing(LOG_STATION, null, "set a fluid sensor set to trigger at [src.signal_threshold] units through MechComp at [log_loc(src)].")
+
+
+/obj/machinery/fluid_machinery/unary/sensor/proc/set_threshold_manual(obj/item/W, mob/user)
+	var/inp = tgui_input_number(user, "Please enter sensor threshold (Will round to [QUANTIZATION_UNITS]):", "Dispense Amount", 0, src.Threshold_Max, src.Threshold_Min)
+	if (!inp) return
+	src.signal_threshold = round(inp, QUANTIZATION_UNITS)
+	boutput(user, "Threshold set to [src.signal_threshold] units.")
+	logTheThing(LOG_STATION, user, "set a fluid sensor set to trigger at [src.signal_threshold] units at [log_loc(src)].")
+
+/obj/machinery/fluid_machinery/unary/sensor/proc/set_frequency(var/datum/mechanicsMessage/input)
+	var/newfrequency = text2num_safe(input.signal)
+	if (!newfrequency)
+		return
+	src.signal_threshold = round(clamp(newfrequency, R_FREQ_MINIMUM, R_FREQ_MAXIMUM), QUANTIZATION_UNITS)
+	logTheThing(LOG_STATION, null, "set a fluid sensor set to trigger at [src.alert_frequency] units through MechComp at [log_loc(src)].")
+
+/obj/machinery/fluid_machinery/unary/sensor/proc/set_frequency_manual(obj/item/W, mob/user)
+	var/inp = tgui_input_number(user, "Please enter frequency :", "Frequency", src.alert_frequency, R_FREQ_MAXIMUM, R_FREQ_MINIMUM)
+	if (!inp) return
+	logTheThing(LOG_STATION, user, "set a fluid sensor set to send at [src.alert_frequency] at [log_loc(src)].")
+
+/obj/machinery/fluid_machinery/unary/sensor/proc/toggle_alerts(obj/item/W, mob/user)
+	src.pda_mode = !src.pda_mode
+	boutput(user, "Alert creation is currently [src.pda_mode].")
+
+/obj/machinery/fluid_machinery/unary/sensor/filtration
+	signal_threshold = 20000
+	filtration = 1
+
+
 /obj/machinery/fluid_machinery/unary/node
 	name = "node"
 	desc = "Used for connecting non-fluid machinery to fluid pipes, AKA, YOU SHOULDNT SEE THIS."
@@ -474,6 +580,10 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/binary)
 	var/on = FALSE
 	var/pumprate = 200
 
+/obj/machinery/fluid_machinery/binary/pump/active
+	on = TRUE
+	icon_state = "pump1"
+
 /obj/machinery/fluid_machinery/binary/pump/New()
 	..()
 	AddComponent(/datum/component/mechanics_holder)
@@ -529,6 +639,10 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/binary)
 	desc = "Separates two fluid pipe networks."
 	icon_state = "valve0"
 	var/on = FALSE
+
+/obj/machinery/fluid_machinery/binary/valve/active
+	on = TRUE
+	icon_state = "valve1"
 
 /obj/machinery/fluid_machinery/binary/valve/attack_hand(mob/user)
 	interact_particle(user, src)
@@ -624,6 +738,24 @@ ABSTRACT_TYPE(/obj/machinery/fluid_machinery/trinary)
 	flags = NOSPLASH
 	var/pullrate = 200
 	var/obj/item/reagent_containers/glass/beaker
+	var/default_reagent = null
+
+/obj/machinery/fluid_machinery/trinary/filter/New()
+	..()
+	if(default_reagent)
+		src.beaker = new /obj/item/reagent_containers/glass/vial
+		src.beaker.reagents.add_reagent(default_reagent, 5)
+		src.UpdateIcon()
+
+/obj/machinery/fluid_machinery/trinary/filter/disposing()
+	src.beaker.set_loc(src.loc)
+	src.beaker = null
+	..()
+
+/obj/machinery/fluid_machinery/trinary/filter/water
+	name = "water filter"
+	default_reagent = "water"
+	icon_state = "filter1"
 
 /obj/machinery/fluid_machinery/trinary/filter/attackby(obj/item/reagent_containers/glass/B, mob/user)
 	..()
