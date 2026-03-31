@@ -49,17 +49,17 @@
 				shoot_projectile_relay_pixel_spread(S, DATA, T, pox, poy, spread_angle, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
 	return Q
 
-/proc/shoot_projectile_relay_pixel_spread(var/atom/movable/S, var/datum/projectile/DATA, var/T, var/pox, var/poy, var/spread_angle, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null)
+/proc/shoot_projectile_relay_pixel_spread(var/atom/movable/S, var/datum/projectile/DATA, var/T, var/pox, var/poy, var/spread_angle, var/fired_prone, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null)
 	if (!S)
 		return
 	if (!isturf(S) && !isturf(S.loc))
 		return
-	var/obj/projectile/P = initialize_projectile_pixel_spread(S, DATA, T, pox, poy, spread_angle, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
+	var/obj/projectile/P = initialize_projectile_pixel_spread(S, DATA, T, pox, poy, spread_angle, fired_prone, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
 	if (P)
 		P.launch()
 	return P
 
-/proc/initialize_projectile_pixel_spread(var/atom/movable/S, var/datum/projectile/DATA, var/T, var/pox, var/poy, var/spread_angle, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null)
+/proc/initialize_projectile_pixel_spread(var/atom/movable/S, var/datum/projectile/DATA, var/T, var/pox, var/poy, var/spread_angle, var/fired_prone, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/atom/movable/remote_sound_source = null)
 	if (!S)
 		return
 	if (!isturf(S) && !isturf(S.loc))
@@ -68,7 +68,7 @@
 	var/turf/Q2 = get_turf(T)
 	if (!(Q1 && Q2))
 		return
-	var/obj/projectile/P = initialize_projectile(Q1, DATA, (Q2.x - Q1.x) * 32 + pox, (Q2.y - Q1.y) * 32 + poy, S, alter_proj = alter_proj, called_target = called_target, remote_sound_source = remote_sound_source)
+	var/obj/projectile/P = initialize_projectile(Q1, DATA, (Q2.x - Q1.x) * 32 + pox, (Q2.y - Q1.y) * 32 + poy, S, alter_proj = alter_proj, called_target = called_target, fired_prone = fired_prone, remote_sound_source = remote_sound_source)
 	if (P && spread_angle)
 		if (spread_angle < 0)
 			spread_angle = -spread_angle
@@ -99,7 +99,7 @@
 		P.launch()
 	return P
 
-/proc/initialize_projectile(var/turf/S, var/datum/projectile/DATA, var/xo, var/yo, var/shooter = null, var/turf/remote_sound_source = null, var/play_shot_sound = TRUE, var/datum/callback/alter_proj = null, var/atom/called_target = null)
+/proc/initialize_projectile(var/turf/S, var/datum/projectile/DATA, var/xo, var/yo, var/shooter = null, var/turf/remote_sound_source = null, var/play_shot_sound = TRUE, var/datum/callback/alter_proj = null, var/atom/called_target = null, var/fired_prone = FALSE)
 	if (!S)
 		return
 	var/obj/projectile/P = new
@@ -110,6 +110,9 @@
 	P.orig_turf = get_turf(S)
 	P.shooter = shooter
 	P.power = DATA.power
+	P.fired_prone = fired_prone
+	if (P.fired_prone)
+		P.flags /= TABLEPASS
 
 	P.proj_data = DATA
 	alter_proj?.Invoke(P)

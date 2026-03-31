@@ -44,6 +44,11 @@
 	/// Degree of spread this projectile was fired with. Note that this informational, and doesn't affect the projectile's trajectory
 	var/spread = 0
 
+	/// The atom aimed at (clicked on) when this was fired
+	var/atom/desired_target
+	/// Whether this projectile was fired while the shooter was prone.
+	var/fired_prone=FALSE
+	var/cover_last_passed = 0
 	///Default dir, set to in do_step()
 	var/facing_dir = NORTH
 	/// Whether this projectile was shot point-blank style (clicking an adjacent mob). Adjusts the log entry accordingly
@@ -313,6 +318,10 @@
 				src.color = "#ffffff"
 	proc/get_len()
 		return sqrt(src.xo**2 + src.yo**2)
+	/// Handle flying over tables/barricades, for the sake of flying over prone players.
+	proc/handle_flyover()
+		if (src.pierces_left > 0 || goes_through_walls || goes_through_mobs) return // if this can pierce, assume the table/whatever is just being shot through.
+		src.cover_last_passed = src.travelled
 	// Awful var names. TODO rename pretty much everything here, or at least document the functions
 	proc/setup()
 		if(QDELETED(src))
