@@ -11,7 +11,7 @@
 
 	business_card = /obj/item/paper/businesscard/josh
 
-	base_goods_buy = list(
+	base_goods_buy = alist(
 		TRADER_RARITY_COMMON = list(
 			/datum/commodity/trader/josh/syringes,
 			/datum/commodity/trader/josh/radios,
@@ -26,7 +26,7 @@
 		)
 	)
 
-	base_goods_sell = list(
+	base_goods_sell = alist(
 		TRADER_RARITY_COMMON = list(
 			/datum/commodity/trader/josh/skateboards,
 			/datum/commodity/trader/josh/tacos,
@@ -35,12 +35,14 @@
 			/datum/commodity/trader/josh/hoodie,
 			/datum/commodity/trader/josh/flyswatter,
 			/datum/commodity/trader/josh/robustris,
+			/datum/commodity/trader/josh/gluestick,
 		),
 		TRADER_RARITY_UNCOMMON = list(
 			/datum/commodity/trader/josh/foamgun,
 			/datum/commodity/trader/josh/paintgun,
 			/datum/commodity/trader/josh/spraypaint,
 			/datum/commodity/trader/josh/rocketshoes,
+			/datum/commodity/trader/josh/firecracker,
 		),
 		TRADER_RARITY_RARE = list()
 	)
@@ -208,3 +210,20 @@
 	price_boundary = list(PAY_UNTRAINED,PAY_TRADESMAN)
 	possible_names = list("All the up-and-coming artists are buzzing over this!",
 	"Show off your vast, oceanic soul with some ART, bro!")
+
+/datum/commodity/trader/josh/firecracker
+	comname = "Totally Legit Bangers"
+	comtype = /obj/item/device/light/sparkler/firecracker
+	price_boundary = list(PAY_UNTRAINED/2,PAY_TRADESMAN/2)
+	amount = 20 //not completely unlimited
+	possible_names = list("These are technically legal, trust me bro!",
+		"REAL firecrackers, chuck them and run!",
+		"My cousin got such a sick burn off of one of these once.")
+
+/datum/commodity/trader/josh/gluestick
+	comname = "Glue Stick"
+	comtype = /obj/item/reagent_containers/applicator/glue
+	price_boundary = list(PAY_UNTRAINED,PAY_TRADESMAN)
+	amount = 50
+	possible_names = list("You should be allowed to glue your poster!",
+	"Stickin' it to the man, yeah!")

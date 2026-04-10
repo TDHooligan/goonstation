@@ -33,14 +33,30 @@
 	icon_opened = "weaponcrateopen"
 	icon_closed = "weaponcrate"
 
+	sec_weapons
+	name = "Security Weapons Crate"
+	req_access = list(access_securitylockers)
+	icon_state = "sec_weapons"
+	icon_opened = "sec_weaponsopen"
+	icon_closed = "sec_weapons"
+
 	confiscated_items
 		name = "confiscated items crate"
 		desc = "Secure storage for confiscated contraband."
 		req_access = list(access_brig)
+		icon_opened = "sec_contrabandopen"
+		icon_closed = "sec_contraband"
+		icon_state = "sec_contraband"
+
+		owlery
+			req_access = list(access_owlerysec)
 
 	armory
 		name = "secure weapons crate"
 		req_access = list(access_armory)
+		icon_opened = "sec_armoryopen"
+		icon_closed = "sec_armory"
+		icon_state = "sec_armory"
 
 		tranquilizer
 			name = "tranquilizer crate"
@@ -137,6 +153,7 @@
 	spawn_contents = list(/obj/item/requisition_token/security = 2,
 	/obj/item/requisition_token/security/assistant = 2,
 	/obj/item/turret_deployer/riot = 2,
+	/obj/item/gun/energy/stasis,
 	/obj/random_item_spawner/armoryweapon/one)
 
 /obj/storage/secure/crate/gear/armory/equipment/looted
@@ -166,6 +183,10 @@
 					carton.ourEgg.blog += blog
 				return 1
 
+	locked
+		name = "Hydroponics Transfer crate"
+		req_access = list(access_hydro)
+
 /obj/storage/secure/crate/eng
 	name = "Engineering crate"
 	desc = "A yellow crate."
@@ -173,6 +194,10 @@
 	density = 1
 	icon_opened = "engcrate-open"
 	icon_closed = "engcrate"
+
+	locked
+		name = "Secure Engineering crate"
+		req_access = list(access_engineering)
 
 	explosives
 		name = "engineering explosive crate"

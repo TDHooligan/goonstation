@@ -172,6 +172,10 @@ var/global/list/job_start_locations = list()
 	name = "Roboticist"
 	icon_state = "roboticist"
 
+/obj/landmark/start/job/pharmacist
+	name = "Pharmacist"
+	icon_state = "pharmacist"
+
 /obj/landmark/start/job/scientist
 	name = "Scientist"
 	icon_state = "scientist"
@@ -532,6 +536,9 @@ var/global/list/job_start_locations = list()
 /obj/landmark/lrt/icemoon
 	name = "Senex"
 
+/obj/landmark/lrt/icemoon2
+	name = "Senex II"
+
 /obj/landmark/lrt/solarium
 	name = "Sol"
 
@@ -610,6 +617,9 @@ var/global/list/job_start_locations = list()
 
 /obj/landmark/fall/sea/marj
 	name = LANDMARK_FALL_MARJ
+
+/obj/landmark/fall/sea/cult
+	name = LANDMARK_FALL_CULTIST
 
 /* ===== Visual Contents ===== */
 

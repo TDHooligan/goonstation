@@ -12,7 +12,7 @@
 	var/list/can_hold = null
 	var/list/can_hold_exact = null
 	var/list/prevent_holding = null
-	var/check_wclass = 0
+	var/check_wclass = STORAGE_CHECK_W_CLASS_IGNORE
 	var/datum/hud/storage/hud
 	var/sneaky = 0
 	var/stealthy_storage = FALSE
@@ -61,8 +61,10 @@
 	icon_state = "box"
 	desc = "A box that can hold a number of small items."
 	max_wclass = W_CLASS_SMALL
+	soundproofing = SOUNDPROOFING_MUTE
 
 /obj/item/storage/box/starter // the one you get in your backpack
+	name = "emergency box"
 	icon_state = "emergbox"
 	spawn_contents = list(/obj/item/clothing/mask/breath, /obj/item/tank/pocket/oxygen)
 	make_my_stuff(onlyMaskAndOxygen)
@@ -147,7 +149,7 @@
 			boutput(user, SPAN_ALERT("[src] is empty!"))
 			return FALSE
 		// clumsy and braindamaged people have a chance to consume multiple pills and spill the rest onto the floor.
-		if(contents.len > 1 && ((user.bioHolder && user.bioHolder.HasEffect("clumsy")) || user.get_brain_damage() > 40) && prob(20))
+		if(contents.len > 1 && ((user.bioHolder && user.bioHolder.HasEffect("clumsy")) || user.get_brain_damage() > BRAIN_DAMAGE_MODERATE) && prob(20))
 			playsound(src.loc, 'sound/effects/pop_pills.ogg', rand(10,50), 1) //range taken from drinking/eating
 			user.visible_message(SPAN_NOTICE("[user] throws the contents of [src] at their own face!"),
 								null, SPAN_NOTICE("Someone pops some pills."))

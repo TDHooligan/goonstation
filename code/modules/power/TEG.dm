@@ -79,6 +79,7 @@
 
 	anchored = ANCHORED_ALWAYS
 	density = 1
+	provides_grip = TRUE
 
 	var/datum/pump_ui/ui
 
@@ -232,11 +233,10 @@
 
 						if(surplus <= 0 && fan_power_draw > apc_charge)
 							src.warning_active |= WARNING_APC_DRAINING
-
-						if(fan_power_draw * WARNING_FAIL_1MIN_ITERS > (cell_wattage + (apc_charge * WARNING_FAIL_1MIN_ITERS)))
-							src.warning_active |= WARNING_1MIN
-						else if(fan_power_draw * WARNING_FAIL_5MIN_ITERS > (cell_wattage + (apc_charge * WARNING_FAIL_5MIN_ITERS)))
-							src.warning_active |= WARNING_5MIN
+							if((fan_power_draw) * WARNING_FAIL_1MIN_ITERS > (cell_wattage + (apc_charge * WARNING_FAIL_1MIN_ITERS)))
+								src.warning_active |= WARNING_1MIN
+							else if((fan_power_draw) * WARNING_FAIL_5MIN_ITERS > (cell_wattage + (apc_charge * WARNING_FAIL_5MIN_ITERS)))
+								src.warning_active |= WARNING_5MIN
 
 		else if(pressure_delta < 0)
 			gas_input = air2
@@ -766,7 +766,7 @@ datum/pump_ui/circulator_ui
 
 		var/max_warning = src.circ1?.warning_active | src.circ2?.warning_active
 		if( max_warning )
-			if(max_warning > WARNING_5MIN && !(src.status & (BROKEN | NOPOWER)))
+			if(max_warning >= WARNING_1MIN && !(src.status & (BROKEN | NOPOWER)))
 				if(!ON_COOLDOWN(src, "klaxon", 10 SECOND))
 					playsound(src.loc, 'sound/misc/klaxon.ogg', 40, pitch=1.1)
 			var/warning_side = 0
@@ -780,7 +780,7 @@ datum/pump_ui/circulator_ui
 			// Use single light if we are variant b (only has one light) OR if we are ONLY in the APC draining state
 			var/one_light = src.variant_b || ( max_warning == WARNING_APC_DRAINING )
 			var/image/warning = image('icons/obj/power.dmi', one_light ? "tegv_lights" : "teg_lights", dir=warning_side)
-			if(max_warning > WARNING_5MIN)
+			if(max_warning >= WARNING_1MIN)
 				warning.color = "#ff0000"
 				warning_light_desc = "<br>[SPAN_ALERT("The power emergency lights are flashing.")]"
 			else
@@ -789,7 +789,7 @@ datum/pump_ui/circulator_ui
 			AddOverlays(warning, "warning")
 
 			if(lastgenlev)
-				if(max_warning > WARNING_5MIN)
+				if(max_warning >= WARNING_1MIN)
 					light.set_color(1, 0, 0)
 				else
 					light.set_color(1.0, 0.70, 0.03)
@@ -909,7 +909,7 @@ datum/pump_ui/circulator_ui
 				running = 1
 			SPAWN(0.5 SECONDS)
 				spam_limiter = 0
-		else if(warnings > WARNING_5MIN && !(src.status & (BROKEN | NOPOWER)))
+		else if(warnings >= WARNING_1MIN && !(src.status & (BROKEN | NOPOWER)))
 			// Allow for klaxon to trigger when off cooldown if UpdateIcon() not called
 			if(!ON_COOLDOWN(src, "klaxon", 10 SECOND))
 				playsound(src.loc, 'sound/misc/klaxon.ogg', 40, pitch=1.1)
@@ -1291,6 +1291,7 @@ Present 	Unscrewed  Connected 	Unconnected		Missing
 				boutput(owner, SPAN_NOTICE("You snip the last piece of the electrical system connected to the semiconductor."))
 				playsound(generator, 'sound/items/Scissor.ogg', 80, TRUE)
 				generator.semiconductor_repair = "The semiconductor has been disconnected and can be pried out or reconnected with additional cable."
+				logTheThing(LOG_STATION, owner, "disabled the TEG by unscrewing the semiconductor.")
 				generator.status |= BROKEN // SEMICONDUCTOR DISCONNECTED IT BROKEN
 				generator.UpdateIcon()
 
@@ -1306,6 +1307,7 @@ Present 	Unscrewed  Connected 	Unconnected		Missing
 				generator.semiconductor_state = TEG_SEMI_STATE_MISSING
 				boutput(owner, SPAN_NOTICE("You finish prying the metal out of \the [generator]."))
 				playsound(generator, 'sound/items/Deconstruct.ogg', 80, TRUE)
+				logTheThing(LOG_STATION, owner, "removed the TEG semiconductor.")
 				generator.semiconductor_repair = "The semiconductor is missing..."
 
 				var/obj/item/sheet/S = new /obj/item/sheet(get_turf(generator))
@@ -1384,6 +1386,7 @@ Present 	Unscrewed  Connected 	Unconnected		Missing
 
 						generator.semiconductor_state = TEG_SEMI_STATE_DISCONNECTED
 						playsound(generator, 'sound/items/Deconstruct.ogg', 80, TRUE)
+						logTheThing(LOG_STATION, owner, "installed a semiconductor into the TEG with material [the_tool.material ? the_tool.material.getName() : "default"].")
 						owner.visible_message(SPAN_NOTICE("[owner] places [the_tool] inside [generator]."), SPAN_NOTICE("You successfully place semiconductor inside \the [generator]."))
 						generator.semiconductor_repair = "The semiconductor has been disconnected and can be pried out or reconnected with additional cable."
 					else if(istype(the_tool, /obj/item/sheet))
@@ -1396,8 +1399,9 @@ Present 	Unscrewed  Connected 	Unconnected		Missing
 
 						generator.semiconductor_state = TEG_SEMI_STATE_BOOTLEG_SEMI
 						playsound(generator, 'sound/items/Deconstruct.ogg', 80, TRUE)
+						logTheThing(LOG_STATION, owner, "installed metal plates as a bootleg TEG semiconductor with material [the_tool.material ? the_tool.material.getName() : "steel"].")
 						owner.visible_message(SPAN_NOTICE("[owner] places [the_tool] inside [generator]."), SPAN_NOTICE("You successfully placed the sheets inside \the [generator]."))
-						generator.semiconductor_repair = "The semiconductor has stuffed with some sheets they need to but and fused with a welder to probably make it work."
+						generator.semiconductor_repair = "There's some metal sheets where the semiconductor is supposed to be, but they need to be fused with a welder to make it work."
 
 			if(TEG_SEMI_STATE_BOOTLEG_SEMI)
 				if (the_tool != null)
@@ -1412,19 +1416,15 @@ Present 	Unscrewed  Connected 	Unconnected		Missing
 
 			if (TEG_SEMI_STATE_DISCONNECTED)
 				if (the_tool != null)
-					the_tool.amount -= 4
-					if(the_tool.amount <= 0)
-						qdel(the_tool)
-					else if(istype(the_tool, /obj/item/cable_coil))
-						var/obj/item/cable_coil/C = the_tool
-						C.UpdateIcon()
-
-					generator.semiconductor_state = TEG_SEMI_STATE_CONNECTED
-					boutput(owner, SPAN_NOTICE("You wire up the semicondoctor to \the [generator]."))
-					playsound(generator, 'sound/items/Deconstruct.ogg', 80, TRUE)
-					generator.semiconductor_repair = "The semiconductor has been wired in but has excess cable that must be removed."
-					generator.status &= ~BROKEN // SEMICONDUCTOR RECONNECTED IT UNBROKEN
-					generator.UpdateIcon()
+					var/obj/item/cable_coil/coil = the_tool
+					if (coil.use(4))
+						generator.semiconductor_state = TEG_SEMI_STATE_CONNECTED
+						boutput(owner, SPAN_NOTICE("You wire up the semicondoctor to \the [generator]."))
+						logTheThing(LOG_STATION, owner, "fixed the TEG by re-wiring the semiconductor.")
+						playsound(generator, 'sound/items/Deconstruct.ogg', 80, TRUE)
+						generator.semiconductor_repair = "The semiconductor has been wired in but has excess cable that must be removed."
+						generator.status &= ~BROKEN // SEMICONDUCTOR RECONNECTED IT UNBROKEN
+						generator.UpdateIcon()
 
 			if (TEG_SEMI_STATE_CONNECTED)
 				generator.semiconductor_state = TEG_SEMI_STATE_UNSCREWED
@@ -1651,11 +1651,13 @@ TYPEINFO(/obj/machinery/power/furnace/thermo)
 	"area_name" - Name of the area the pump is in
 	"alive" - Whether or not the pump has broadcasted back. Used while checking for if pumps are unreachable or not
 	*/
-	var/list/pump_data_ref = src.getPump(signal.data["netid"])
+	var/list/pump_data_ref = src.getPump(signal.data["sender"])
 	if (pump_data_ref)
 		// We exist in the list already, update information instead
 		for (var/key in signal.data)
 			pump_data_ref[key] = signal.data[key]
+			if (key == "sender")
+				pump_data_ref["netid"] = signal.data[key]
 		pump_data_ref["processing"] = FALSE
 		pump_data_ref["alive"] = PUMP_ALIVE
 		return
@@ -1663,6 +1665,8 @@ TYPEINFO(/obj/machinery/power/furnace/thermo)
 	var/list/infoset = new()
 	for (var/key in signal.data)
 		infoset[key] = signal.data[key]
+		if (key == "sender")
+			infoset["netid"] = signal.data[key]
 	var/area/A = get_area(signal.source)
 	if (!A)
 		return

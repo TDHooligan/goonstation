@@ -177,7 +177,7 @@ var/sound/iomoon_alarm_sound = null
 	requires_power = 1
 	force_fullbright = 0
 	luminosity = 0
-	teleport_blocked = 1
+	teleport_blocked = AREA_TELEPORT_BLOCKED
 	area_parallax_render_source_group = null
 	radiation_level = 0.8
 	sound_loop = 'sound/ambience/industrial/AncientPowerPlant_Drone1.ogg'
@@ -234,9 +234,9 @@ var/sound/iomoon_alarm_sound = null
 /obj/machinery/computer3/luggable/personal/iomoon
 	name = "Research Laptop"
 	desc = "A portable computer used for away team-style research."
-	setup_drive_type = /obj/item/disk/data/fixed_disk/iomoon
+	setup_drive_type = /obj/item/disk/data/fixed_disk/hd32/iomoon
 
-/obj/item/disk/data/fixed_disk/iomoon
+/obj/item/disk/data/fixed_disk/hd32/iomoon
 
 	New()
 		..()

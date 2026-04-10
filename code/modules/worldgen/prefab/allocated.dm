@@ -10,6 +10,11 @@ ABSTRACT_TYPE(/datum/mapPrefab/allocated)
 		src.applyTo(region.bottom_left, overwrite_args = DMM_OVERWRITE_OBJS | DMM_OVERWRITE_MOBS | DMM_BESPOKE_AREAS)
 		return region
 
+/datum/mapPrefab/allocated/newbee_tutorial
+	prefabPath = "assets/maps/allocated/newbee_tutorial.dmm"
+	prefabSizeX = 40
+	prefabSizeY = 21
+
 /datum/mapPrefab/allocated/blob_tutorial
 	prefabPath = "assets/maps/allocated/blob_tutorial.dmm"
 	prefabSizeX = 17
@@ -77,3 +82,8 @@ ABSTRACT_TYPE(/datum/mapPrefab/allocated)
 	prefabSizeX = 9
 	prefabSizeY = 9
 	prefabPath = "assets/maps/allocated/phoenix_nest.dmm"
+
+/datum/mapPrefab/allocated/salvager_local
+	prefabSizeX = 31
+	prefabSizeY = 33
+	prefabPath = "assets/maps/allocated/salvager_local.dmm"

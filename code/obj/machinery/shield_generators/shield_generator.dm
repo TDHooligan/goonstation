@@ -11,7 +11,7 @@ TYPEINFO(/area/station/shield_zone)
 	minimaps_to_render_on = null
 	occlude_foreground_parallax_layers = FALSE
 	#ifdef UNDERWATER_MAP
-	ambient_light = OCEAN_LIGHT
+	ambient_light_source = AMBIENT_LIGHT_SRC_OCEAN
 	#endif
 
 /* ==================== Generator ==================== */
@@ -225,7 +225,7 @@ TYPEINFO(/area/station/shield_zone)
 	name = "shield control computer"
 	icon_state = "engine"
 	base_icon_state = "engine"
-	setup_drive_size = 48
+	setup_drive_type = /obj/item/disk/data/fixed_disk/hd64
 
 	setup_starting_peripheral1 = /obj/item/peripheral/network/powernet_card
 	//setup_starting_peripheral2 = /obj/item/peripheral/network/radio/locked/pda

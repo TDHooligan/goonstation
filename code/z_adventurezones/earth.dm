@@ -20,7 +20,7 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 	icon_state = "purple"
 	requires_power = 0
 	sound_environment = 4
-	teleport_blocked = 2
+	teleport_blocked = AREA_TELEPORT_AND_PORTER_BLOCKED
 	skip_sims = 1
 	sims_score = 25
 	sound_group = "centcom"
@@ -46,12 +46,12 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 	name = "Earth"
 	icon_state = "nothing_earth"
 	//force_fullbright = 1
-	ambient_light = CENTCOM_LIGHT
+	ambient_light_source = AMBIENT_LIGHT_SRC_EARTH
 
 /area/meadow
 	name = "Meadow"
 	icon_state = "nothing_earth"
-	ambient_light = CENTCOM_LIGHT
+	ambient_light_source = AMBIENT_LIGHT_SRC_EARTH
 	sanctuary = TRUE
 
 /area/centcom/gallery
@@ -143,6 +143,9 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 	gibbed
 		ckey = "gibbed"
 		name = "Office of Rick"
+	glowbold
+		ckey = "glowbold"
+		name = "Office of Glowbold"
 	grayshift
 		ckey = "grayshift"
 		name = "Office of Grayshift"
@@ -167,6 +170,9 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 	janantilles
 		ckey = "janantilles"
 		name = "Office of Fleur DeLaCreme"
+	jorj
+		ckey = "jorj949"
+		name = "Office of George"
 	katzen
 		ckey = "flappybat"
 		name = "Office of Katzen"
@@ -258,6 +264,12 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 	varshie
 		ckey = "varshie"
 		name = "Office of Varshie"
+	virvatuli
+		ckey = "virvatuli"
+		name = "Office of Virvatuli"
+		sound_loop = 'sound/ambience/music/v_office_beats.ogg'
+		sound_loop_vol = 70
+		sound_group = "virva_office"
 	walpvrgis
 		ckey = "walpvrgis"
 		name = "Office of Walpvrgis"
@@ -306,7 +318,7 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 /area/retentioncenter/teleblocked
 	name = "NT Retention Center (teleblocked)"
 	icon_state = "death"
-	teleport_blocked = 2
+	teleport_blocked = AREA_TELEPORT_AND_PORTER_BLOCKED
 
 /area/retentioncenter/depot
 	name = "NT Retention Center (depot)"
@@ -419,8 +431,9 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 		src.transform = src.transform.Scale(randx, randy) //make em weird lookin (mood)
 
 //adhara comp stuff - very ugly and big code
-/obj/item/disk/data/fixed_disk/adharas_laptop
-	file_amount = 512 //very big
+/obj/item/disk/data/fixed_disk/hd128/adharas_laptop
+	//file_amount = 512 //very big
+	//Why did it have to be so big??
 
 	New()
 		..()
@@ -445,7 +458,7 @@ var/global/Z4_ACTIVE = 0 //Used for mob processing purposes
 		newfolder.add_file( new /datum/computer/file/record/adhara_office/macncheese (src))
 
 /obj/machinery/computer3/luggable/personal/adhara_laptop //due to jank system, this isnt the one that gets put in the map. but it is used internally by the other
-	setup_drive_type = /obj/item/disk/data/fixed_disk/adharas_laptop
+	setup_drive_type = /obj/item/disk/data/fixed_disk/hd128/adharas_laptop
 
 /obj/item/luggable_computer/personal/adhara_laptop //hi i go into the map
 	name = "cute laptop"

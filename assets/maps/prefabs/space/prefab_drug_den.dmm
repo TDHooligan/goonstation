@@ -431,7 +431,7 @@
 /turf/simulated/floor/carpet/arcade/half,
 /area/prefab/drug_den)
 "Bo" = (
-/obj/submachine/chef_sink,
+/obj/machinery/sink,
 /turf/simulated/floor/specialroom/cafeteria,
 /area/prefab/drug_den)
 "BO" = (
@@ -883,8 +883,7 @@
 /area/prefab/drug_den/party)
 "VU" = (
 /obj/machinery/vending/kitchen{
-	freestuff = 1;
-	req_access_txt = null
+	freestuff = 1
 	},
 /turf/simulated/floor/specialroom/cafeteria,
 /area/prefab/drug_den)

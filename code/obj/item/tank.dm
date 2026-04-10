@@ -184,7 +184,7 @@ ABSTRACT_TYPE(/obj/item/tank)
 				// Thank goodness there's a lot of them! (With maxcap values you can get around 5.6 mols fallout in here tops, which is ~80 neutrons)
 				var/neutrons_to_emit = 10 * ceil( sqrt( src.air_contents.radgas * range ) )
 				for(var/i = 1 to neutrons_to_emit)
-					shoot_projectile_XY(src, new /datum/projectile/neutron(), rand(-10,10), rand(-10,10))
+					shoot_projectile_XY(get_turf(src), new /datum/projectile/neutron(), rand(-10,10), rand(-10,10))
 				// Do some flash radiation so that the mobs just out of the gib range still get messed up bad
 				// Based off neutrons_to_emit in a way, but to be a multiplier value between 0 and 2
 				rad_damage_multiplier = 2 * clamp(neutrons_to_emit / 100, 0, 1)
@@ -195,12 +195,12 @@ ABSTRACT_TYPE(/obj/item/tank)
 				for_by_tcl(B, /obj/item/bible)
 					var/turf/T = get_turf(B.loc)
 					if(T)
-						logTheThing(LOG_BOMBING, src, "exploded at [log_loc(T)], range: [range], last touched by: [src.fingerprintslast]")
+						logTheThing(LOG_BOMBING, src, "exploded at [log_loc(T)], range: [range], last touched by: [replace_if_false(src.get_last_ckey(), "None")]")
 						explosion(src, T, range * 0.25, range * 0.5, range, range * 1.5, flash_radiation_multiplier=rad_damage_multiplier)
 				qdel(src)
 				return
 			var/turf/epicenter = get_turf(loc)
-			logTheThing(LOG_BOMBING, src, "exploded at [log_loc(epicenter)], , range: [range], last touched by: [src.fingerprintslast]")
+			logTheThing(LOG_BOMBING, src, "exploded at [log_loc(epicenter)], , range: [range], last touched by: [replace_if_false(src.get_last_ckey(), "None")]")
 			src.visible_message(SPAN_ALERT("<b>[src] explosively ruptures!</b>"))
 			explosion(src, epicenter, range * 0.25, range * 0.5, range, range * 1.5, flash_radiation_multiplier=rad_damage_multiplier)
 			qdel(src)
@@ -363,8 +363,13 @@ ABSTRACT_TYPE(/obj/item/tank)
 		return " [log_atmos(src)]"
 
 	proc/assembly_setup(var/manipulated_bomb, var/obj/item/assembly/parent_assembly, var/mob/user, var/is_build_in)
+		//lets make them contraband 4, like pipebombs
+		var/singletank_bomb_contraband_level = 4
 		//we need to add the new icon for the plasma tank
 		parent_assembly.target_item_prefix = "plasma"
+		// we update the contraband now to reflect the newly added tank
+		APPLY_ATOM_PROPERTY(parent_assembly, PROP_MOVABLE_VISIBLE_CONTRABAND, parent_assembly, max(GET_ATOM_PROPERTY(parent_assembly,PROP_MOVABLE_VISIBLE_CONTRABAND), singletank_bomb_contraband_level))
+		SEND_SIGNAL(parent_assembly, COMSIG_MOVABLE_CONTRABAND_CHANGED, FALSE)
 
 	/// ----------------------------------------------
 
@@ -468,17 +473,9 @@ TYPEINFO(/obj/item/tank/jetpack)
 	var/on = FALSE
 
 	// base_icon_state is used when updating the jetpack's icon, with "1" or "0" appended depending on if the jetpack is on or not
-	// jetpacks have special behavior on Manta, hence the overrides here
-	#if defined(MAP_OVERRIDE_MANTA)
-	icon_state = "jetpack_mag0"
-	item_state = "jetpack_mag"
-	c_flags = IS_JETPACK | ONBACK
-	var/base_icon_state = "jetpack_mag"
-	#else
 	icon_state = "jetpack0"
 	item_state = "jetpack"
 	var/base_icon_state = "jetpack"
-	#endif
 
 	New()
 		..()
@@ -500,11 +497,6 @@ TYPEINFO(/obj/item/tank/jetpack)
 		return
 
 	proc/allow_thrust(num, mob/user)
-		#if defined(MAP_OVERRIDE_MANTA)
-		if (MagneticTether != 1)
-			return 0
-		#endif
-
 		if (!(src.on))
 			return 0
 		if ((num < 0.01 || TOTAL_MOLES(src.air_contents) < num))
@@ -570,6 +562,7 @@ TYPEINFO(/obj/item/tank/jetpack/micro)
 	extra_desc = "This one is the smaller variant, suitable for shorter ranged activities."
 	force = 6
 
+
 	New()
 		..()
 		src.air_contents.volume = 30
@@ -608,6 +601,7 @@ ABSTRACT_TYPE(/obj/item/tank/pocket)
 	name = "pocket tank (plasma)"
 	icon_state = "pocket_plasma"
 	extra_desc = "The bright orange paintwork indicates that it contains plasma."
+	distribute_pressure = 17
 
 	New()
 		..()
@@ -646,6 +640,7 @@ ABSTRACT_TYPE(/obj/item/tank/pocket/extended)
 	name = "extended capacity pocket tank (oxygen)"
 	icon_state = "ex_pocket_oxtank"
 	extra_desc = "The bright yellow and deep blue paintwork indicates that it contains oxygen."
+	distribute_pressure = 17
 
 	New()
 		..()
@@ -655,6 +650,7 @@ ABSTRACT_TYPE(/obj/item/tank/pocket/extended)
 	name = "extended capacity pocket tank (plasma)"
 	icon_state = "ex_pocket_plastank"
 	extra_desc = "The bright yellow and orange paintwork indicates that it contains plasma."
+	distribute_pressure = 17
 
 	New()
 		..()
@@ -703,6 +699,7 @@ ABSTRACT_TYPE(/obj/item/tank/mini)
 	icon_state = "mini_oxtank"
 	item_state = "mini_oxtank"
 	extra_desc = "The deep blue paintwork indicates that it contains oxygen."
+	distribute_pressure = 17
 
 	New()
 		..()
@@ -721,6 +718,7 @@ ABSTRACT_TYPE(/obj/item/tank/mini)
 	item_state = "mini_plastank"
 	extra_desc = "The bright orange paintwork indicates that it contains plasma."
 	compatible_with_TTV = FALSE
+	distribute_pressure = 17
 
 	New()
 		..()

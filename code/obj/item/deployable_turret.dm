@@ -229,7 +229,7 @@ ADMIN_INTERACT_PROCS(/obj/deployable_turret, proc/admincmd_shoot, proc/admincmd_
 				muzzle_flash_any(src, 0, "muzzle_flash")
 				if (src.current_projectile.casing)
 					picked_turf = pick(casing_turfs)
-					var/obj/item/casing/turret_casing = new src.current_projectile.casing(picked_turf, src.forensic_ID)
+					var/obj/item/casing/turret_casing = new src.current_projectile.casing(picked_turf, src)
 					// prevent infinite casing stacks
 					if (length(picked_turf.contents) > 10)
 						SPAWN(30 SECONDS)
@@ -400,7 +400,7 @@ ADMIN_INTERACT_PROCS(/obj/deployable_turret, proc/admincmd_shoot, proc/admincmd_
 		deployer.turret_health = src.health // NO FREE REPAIRS, ASSHOLES
 		deployer.damage_words = src.damage_words
 		deployer.quick_deploy_fuel = src.quick_deploy_fuel
-		deployer.tooltip_rebuild = 1
+		deployer.tooltip_rebuild = TRUE
 		qdel(src)
 		return deployer
 
