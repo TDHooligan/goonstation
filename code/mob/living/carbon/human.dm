@@ -220,6 +220,7 @@
 	get_image_group(CLIENT_IMAGE_GROUP_ARREST_ICONS).add_image(arrestIcon)
 
 	src.organHolder = new(src)
+	src.surgeryHolder = new(src)
 
 	if (!bioHolder)
 		bioHolder = new/datum/bioHolder(src)
@@ -2065,11 +2066,14 @@ Tries to put an item in an available backpack, belt storage, pocket, or hand slo
 		src.organHolder.unbreak_all_organs()
 	else
 		src.organHolder = new(src)
+
 	src.organHolder.heal_organs(INFINITY, INFINITY, INFINITY, list("liver", "left_kidney", "right_kidney", "stomach", "intestines","spleen", "left_lung", "right_lung","appendix", "pancreas", "heart", "brain", "left_eye", "right_eye", "tail"))
 
 	src.organHolder.create_organs()
 	if (src.surgeryHolder)
 		src.surgeryHolder.cancel_all()
+	else
+		src.surgeryHolder = new(src)
 	if (src.organHolder.head && isskeleton(src))
 		var/datum/mutantrace/skeleton/S = src.mutantrace
 		S.set_head(src.organHolder.head)
@@ -2114,6 +2118,8 @@ Tries to put an item in an available backpack, belt storage, pocket, or hand slo
 	if (src.organHolder)
 		src.organHolder.unbreak_all_organs()
 
+	if (src.surgeryHolder)
+		src.surgeryHolder.cancel_all()
 	if (!src.organHolder)
 		src.organHolder = new(src)
 	src.organHolder.heal_organs(INFINITY, INFINITY, INFINITY, src.organHolder.organ_list)

@@ -53,7 +53,7 @@ TYPEINFO(/mob/living)
 
 
 	var/datum/organHolder/organHolder = null //Not all living mobs will use organholder. Instantiate on New() if you want one.
-	var/datum/surgeryHolder/surgeryHolder = null
+	var/datum/surgeryHolder/living/surgeryHolder = null
 
 	/// all applied patches (ex. medical patches)
 	var/list/applied_patches = list()
@@ -159,9 +159,6 @@ TYPEINFO(/mob/living)
 		APPLY_ATOM_PROPERTY(src, PROP_ATOM_FLOATING, src)
 
 	sleep_bubble.appearance_flags = RESET_TRANSFORM | PIXEL_SCALE
-
-	//remove me. probably
-	surgeryHolder = new/datum/surgeryHolder/living(src)
 
 	SPAWN(0)
 		if(!ishuman(src))

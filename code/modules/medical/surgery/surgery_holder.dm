@@ -225,10 +225,10 @@
 			..()
 			base_surgeries += new/datum/surgery/category/limb(patient, src)
 			base_surgeries += new/datum/surgery/category/organ(patient, src)
-			base_surgeries += new/datum/surgery/head(patient, src)
+			base_surgeries += new/datum/surgery/category/head(patient, src)
+			base_surgeries += new/datum/surgery/category/lower_back(patient, src)
 			base_surgeries += new/datum/surgery/implant(patient, src)
 			base_surgeries += new/datum/surgery/parasite(patient, src)
-			base_surgeries += new/datum/surgery/lower_back(patient, src)
 			base_surgeries += new/datum/surgery/sutures(patient, src)
 			// put skeleton surgeries up here, as they can all be performed at any time
 			base_surgeries += new/datum/surgery/skeleton(patient, src)

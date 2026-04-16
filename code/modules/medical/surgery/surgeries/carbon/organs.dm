@@ -13,6 +13,8 @@
 	surgery_possible(mob/living/surgeon)
 		if (surgeon.zone_sel.selecting != "chest")
 			return FALSE
+		if (surgeon.a_intent == INTENT_GRAB) // we're doing tail/butt surgery
+			return FALSE
 		return ..()
 	on_cancel(mob/surgeon, obj/item/tool, quiet)
 		surgeon.tri_message(patient, SPAN_NOTICE("<b>[surgeon]</b> sews the incision on [patient == surgeon ? "[his_or_her(patient)]" : "[patient]'s"] chest closed with [tool]."),\
@@ -37,7 +39,7 @@
 
 
 
-/datum/surgery/head
+/datum/surgery/category/head
 	id = "head_surgery"
 	name = "Head Surgery"
 	desc = "Perform surgery on the patient's head"
@@ -120,7 +122,7 @@
 		add_next_step(new /datum/surgery_step/fluff/snip(src))
 
 
-/datum/surgery/lower_back
+/datum/surgery/category/lower_back
 	id = "lower_back_surgery"
 	name = "Lower Back Surgery"
 	desc = "Remove the patients' tail or butt."
