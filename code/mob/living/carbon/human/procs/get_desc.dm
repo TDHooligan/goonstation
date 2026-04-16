@@ -248,8 +248,6 @@
 						else
 							. += "<br>[SPAN_NOTICE("[Noun] has [src.organHolder.tail.name] attached just above [t_his] butt.")]"
 					// don't bother telling people that you have the tail you're supposed to have. nobody congratulates me for having all my legs
-					// if (src.organHolder.back_op_stage >= BACK_SURGERY_OPENED && src.mob_flags & ~IS_BONEY) // assive ass wound? and not a skeleton?
-					// 	. += "<br>[SPAN_ALERT("<B>[Noun] has a long incision around the base of [t_his] tail!</B>")]"
 				else if (src.mob_flags & SHOULD_HAVE_A_TAIL) // No tail, no ass wound? Supposed to have a tail?
 					. += "<br>[SPAN_ALERT("<B>[Noun] is missing [t_his] tail!</B>")]" // oh no my tails gone!!
 					// Commenting on someone not having a tail when they shouldnt have a tail will be left up to the player

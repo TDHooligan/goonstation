@@ -158,12 +158,17 @@
 	get_desc()
 		var/steps_complete = src.get_surgery_progress()
 		var/t_his = his_or_her(patient)
+		var/Noun = capitalize(t_his)
 		if (steps_complete > 0) // first person to call this a tailhole is getting dropkicked into the sun
-			if (patient.mob_flags & SHOULD_HAVE_A_TAIL) // Are they supposed to have a tail?
-				if (!patient.organHolder.butt) // Also missing a butt?
-					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision at the base of [t_his] back where [t_his] tail should be!</B>")]"
-				else // has butt
-					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision above [t_his] butt where [t_his] tail should be!</B>")]"
+			if (patient.mob_flags & SHOULD_HAVE_A_TAIL)
+				if (!patient.organHolder.tail)
+					if (!patient.organHolder.butt) // Also missing a butt?
+						. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision at the base of [t_his] back where [t_his] tail should be!</B>")]"
+					else // has butt
+						. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision above [t_his] butt where [t_his] tail should be!</B>")]"
+				else
+					if (complete && patient.mob_flags & ~IS_BONEY) // assive ass wound? and not a skeleton?
+						. += "<br>[SPAN_ALERT("<B>[Noun] has a long incision around the base of [t_his] tail!</B>")]"
 			else // Do they normally not have a tail?
 				if (!patient.organHolder.butt) // Also missing a butt?
 					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision at the base of [t_his] back!</B>")]"
