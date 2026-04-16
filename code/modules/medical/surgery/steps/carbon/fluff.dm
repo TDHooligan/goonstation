@@ -1,5 +1,5 @@
 /datum/surgery_step
-	fluff //! steps that are entirely just to fluff out surgeries. you could change these to have their verbs/message passed in the constructor
+	fluff //! steps that are entirely just to fluff out surgeries.
 		name = "Fluff Surgery"
 		suture
 			name = "Suture"
@@ -74,7 +74,8 @@
 				surgeon.tri_message(patient, SPAN_ALERT("<b>[surgeon]</b> cuts [patient == surgeon ? "[his_or_her(patient)]" : "[patient]'s"] lower back open with [tool]!"),\
 					SPAN_ALERT("You cut [surgeon == patient ? "your" : "[patient]'s"] lower back open with [tool]!"),\
 					SPAN_ALERT("[patient == surgeon ? "You cut" : "<b>[surgeon]</b> cuts"] your lower back open with [tool]!"))
-		back_cut_2
+
+		back_cut_intestine
 			name = "Cut"
 			desc = "Disconnect the intestines."
 			icon_state = "scalpel"
@@ -87,7 +88,7 @@
 					SPAN_ALERT("[patient == surgeon ? "You sever" : "<b>[surgeon]</b> severs"] your intestines with [tool]!"))
 
 
-		back_saw
+		back_saw_butt
 			name = "Saw"
 			desc = "Saw through the butt."
 			icon_state = "saw"

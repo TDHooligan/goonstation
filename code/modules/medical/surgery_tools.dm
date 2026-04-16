@@ -547,7 +547,7 @@ CONTAINS:
 							target.organHolder.heart.op_stage = 0
 						if (target.organHolder.chest)
 							target.organHolder.chest.op_stage = 0
-						target.surgeryHolder.cancel_surgery("lower_back_surgery")
+						target.surgeryHolder.cancel_surgery_by_id("lower_back_surgery")
 
 						target.TakeDamage("chest", 2, 0)
 					else if (zone == "head")
@@ -771,15 +771,15 @@ CONTAINS:
 				return
 			return ..()
 		var/mob/living/carbon/human/H = target
-		var/surgery_status = H.get_surgery_status(user.zone_sel.selecting)
-		if (!surgery_status)
-			if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
-				return
-			return ..()
-		if (!surgeryCheck(H, user))
-			if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
-				return
-			return ..()
+		// var/surgery_status = H.get_surgery_status(user.zone_sel.selecting)
+		// if (!surgery_status)
+		// 	if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
+		// 		return
+		// 	return ..()
+		// if (!surgeryCheck(H, user))
+		// 	if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
+		// 		return
+		// 	return ..()
 		if (H.chest_cavity_clamped && !H.bleeding)
 			boutput(user, SPAN_NOTICE("[target]'s blood vessels are already clamped."))
 			return

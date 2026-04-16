@@ -6,7 +6,7 @@
 		icon_state = "in"
 		success_sound = 'sound/impact_sounds/Slimy_Cut_1.ogg'
 		tool_requirement(mob/surgeon, obj/item/tool)
-			if(tool.w_class > W_CLASS_NORMAL && !(tool.type in chestitem_whitelist))
+			if(tool.w_class > W_CLASS_NORMAL && !(tool.type in global.chestitem_whitelist))
 				boutput(surgeon, SPAN_ALERT("[tool] is too big to fit into [parent_surgery.patient]'s chest cavity."))
 				return FALSE
 			return TRUE

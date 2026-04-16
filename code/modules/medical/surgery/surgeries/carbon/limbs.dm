@@ -1,4 +1,4 @@
-/datum/surgery/limb_surgery
+/datum/surgery/category/limb
 	id = "limb_surgery"
 	name = "Limb Surgery"
 	desc = "Modify the patients' limbs."
@@ -15,7 +15,7 @@
 /datum/surgery/limb
 	name = "Base Limb Surgery"
 	desc = "Call a coder if you see this!"
-	id = "limb_surgery"
+	id = "limb_surgery_base"
 	icon_state = "heart"
 	var/limb_var_name = "limb_var_name"
 	exit_when_finished = TRUE

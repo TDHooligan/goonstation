@@ -23,7 +23,7 @@
 
 	/// Returns TRUE if the surgery holder will perform a surgery with the given tools.
 	proc/will_perform_surgery(var/mob/living/surgeon, var/obj/item/tool)
-		if (get_shortcut(surgeon,tool))
+		if (get_implicit_step(surgeon,tool))
 			return TRUE
 		if (tool_relevant(surgeon,tool) && length(get_contexts(surgeon, tool)) > 0)
 			return TRUE
@@ -31,7 +31,7 @@
 
 	/// Attempt to perform surgery with the given tool. Returns TRUE if the surgery was performed.
 	proc/perform_surgery(var/mob/living/surgeon, var/obj/item/tool)
-		if (do_shortcut(surgeon,tool))
+		if (do_implicit_step(surgeon,tool))
 			tool.add_fingerprint(surgeon)
 			return TRUE
 
@@ -39,13 +39,13 @@
 			tool.add_fingerprint(surgeon)
 			if (start_surgery(surgeon,tool))
 				return TRUE
-			else
+			else // if the tool is relevant but has no relevant surgery, mess up the patient.
 				if (surgery_conditions_met(surgeon, tool))
 					generic_mess_up(surgeon, tool)
 					return TRUE
 		return FALSE
 
-	/// Naively populate all surgeries under this holder. For indexing surgeries.
+	/// Index all surgeries, and sub surgeries, inside this holder.
 	proc/populate_child_surgeries()
 		all_surgeries = list()
 		var/list/datum/surgery/surgery_list = list()
@@ -55,6 +55,13 @@
 
 		for (var/datum/surgery/surgery in surgery_list)
 			all_surgeries[surgery.id] = surgery
+
+
+	proc/get_desc()
+		var/desc = ""
+		for (var/datum/surgery/surgery in base_surgeries)
+			desc += surgery.get_desc()
+		return desc
 
 	/// Enter the top level context menu for this surgery holder. Returns TRUE if a context menu was shown.
 	proc/start_surgery(mob/surgeon, obj/tool)
@@ -67,16 +74,20 @@
 	proc/get_surgery_progress(var/surgery_id)
 		all_surgeries[surgery_id].infer_surgery_stage()
 		return all_surgeries[surgery_id].get_surgery_progress()
-	proc/get_surgery_complete(var/surgery_id)
+
+	proc/is_surgery_complete(var/surgery_id)
 		return all_surgeries[surgery_id].surgery_complete()
+
 	proc/get_active_surgeries(var/zone)
 		var/list/datum/surgery/surgeries = list()
 		for (var/datum/surgery/surgery in all_surgeries)
 			if (surgery.affected_zone == zone && surgery.get_surgery_progress() > 0)
 				surgeries += surgery
 		return surgeries
+
 	proc/get_surgery(var/surgery_id)
 		return all_surgeries[surgery_id]
+
 	proc/get_surgeries_by_zone(var/zone)
 		var/list/datum/surgery/result = list()
 		for (var/surgery in all_surgeries)
@@ -84,6 +95,8 @@
 			if (thing.affected_zone == zone)
 				result += thing
 		return result
+
+
 	/// Trigger a surgery's context clicked action. Returns TRUE if a context menu was shown.
 	proc/surgery_clicked(datum/surgery/surgery, mob/living/surgeon, obj/item/I)
 		if (!surgery)
@@ -103,15 +116,16 @@
 		for(var/datum/surgery/surgery in base_surgeries)
 			surgery.cancel_surgery(null, null)
 	/// Cancel a surgery through the context menu. This will generally re-open the context action menu.
-	proc/cancel_surgery_context(datum/surgery/surgery, mob/living/surgeon, obj/item/I)
+	proc/cancel_surgery_context(datum/surgery/surgery, mob/living/surgeon, obj/item/I, quiet = FALSE)
 		if (!surgery)
 			return
-		surgery.cancel_surgery(surgeon, I, quiet=FALSE)
-	/// Cancel a surgery. Does not interact with context menus.
-	proc/cancel_surgery(id, mob/living/surgeon, obj/item/I)
+		surgery.cancel_surgery(surgeon, I, quiet=quiet)
+
+	/// Cancel a surgery.
+	proc/cancel_surgery_by_id(id, mob/living/surgeon, obj/item/I, quiet = FALSE)
 		if (!id)
 			return
-		all_surgeries[id].cancel_surgery(surgeon, I)
+		all_surgeries[id].cancel_surgery(surgeon, I, quiet=quiet)
 
 	/// Get the top-level surgery context icons for this holder.
 	proc/get_contexts(var/surgeon, var/obj/item/tool)
@@ -134,20 +148,20 @@
 		return TRUE
 
 
-	// 'Shortcuts' are for implicit surgeries that don't use a context menu. For example. Cramming an organ inside someone's chest.
-	/// Determine if this surgery will use the item without needing a context popup.
-	proc/do_shortcut(mob/surgeon, obj/item/tool)
-		var/datum/surgery_step/step = get_shortcut(surgeon, tool)
+	// 'implicit_steps' are for implicit surgeries that don't use a context menu. For example. Cramming an organ inside someone's chest.
+	/// Performs an implicit step, if possible. Returns TRUE if an implicit step was performed.
+	proc/do_implicit_step(mob/surgeon, obj/item/tool)
+		var/datum/surgery_step/step = get_implicit_step(surgeon, tool)
 		if (step)
 			step.perform_step(surgeon, tool)
 			return TRUE
 		return FALSE
 	/// Get the surgery step that will be performed. Returns FALSE if no surgery step is possible.
-	proc/get_shortcut(mob/surgeon, obj/item/tool)
+	proc/get_implicit_step(mob/surgeon, obj/item/tool)
 		for (var/datum/surgery/surgery in base_surgeries)
 			surgery.infer_surgery_stage()
 		for (var/datum/surgery/surgery in base_surgeries)
-			var/result = surgery.get_shortcut(surgeon, tool)
+			var/result = surgery.get_implicit_step(surgeon, tool)
 			if (result)
 				return result
 		return FALSE
@@ -209,8 +223,8 @@
 	living
 		add_surgeries()
 			..()
-			base_surgeries += new/datum/surgery/limb_surgery(patient, src)
-			base_surgeries += new/datum/surgery/organ_surgery(patient, src)
+			base_surgeries += new/datum/surgery/category/limb(patient, src)
+			base_surgeries += new/datum/surgery/category/organ(patient, src)
 			base_surgeries += new/datum/surgery/head(patient, src)
 			base_surgeries += new/datum/surgery/implant(patient, src)
 			base_surgeries += new/datum/surgery/parasite(patient, src)

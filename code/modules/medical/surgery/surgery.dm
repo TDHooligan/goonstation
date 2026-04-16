@@ -7,20 +7,22 @@
 	var/desc = "The base surgery. Call a coder if you see this."
 	/// The icon that this surgery uses
 	var/icon_state = "scissor"
-	/// The surgery that this surgery sits inside of. Null if this sits at the top level.
-	var/datum/surgery/super_surgery
-	/// The remaining steps to perform this surgery
+	/// The steps that make up this surgery
 	var/list/datum/surgery_step/surgery_steps
-	/// Surgeries inside this surgery
-	var/list/current_sub_surgeries
-	var/list/default_sub_surgeries
+	/// If TRUE, this surgery will automatically be performed when the patient is hit with a relevant tool
+	var/implicit = FALSE
+
 	/// If FALSE, sub surgeries are inaccessible until steps are completed.
 	var/sub_surgeries_always_possible = FALSE
-	/// If TRUE, the surgery will be exited when finished, placing the user up 1 level.
+	/// If TRUE, the surgery will be exited when finished, placing the user in the super-surgery.
 	var/exit_when_finished = FALSE
-	/// If TRUE, this surgery will automatically be performed when
-	/// the user is hit with a relevant tool
-	var/implicit = FALSE
+
+	/// The surgery that this surgery sits inside of. Null if this sits at the top level.
+	var/datum/surgery/super_surgery
+	/// Surgeries inside this surgery
+	var/list/current_sub_surgeries
+	/// Surgeries to add to this surgery by default.
+	var/list/default_sub_surgeries
 	/// Roughly the part of the body this surgery is performed on. Used for cancelling surgeries.
 	var/affected_zone = "chest"
 
@@ -117,7 +119,7 @@
 					return step
 		return FALSE
 
-	/// Called when the last step of a surgery is completed. Override on_complete to handle completion.
+	/// Called when the last step of a surgery is completed. Override on_complete to add completion effects.
 	proc/complete_surgery(mob/surgeon, obj/item/I)
 		complete = TRUE
 		on_complete(surgeon, I)
@@ -149,15 +151,15 @@
 
 
 	/// Perform the first implicit step with this tool.
-	proc/do_shortcut(mob/surgeon, obj/item/I)
-		var/datum/surgery_step/step = get_shortcut(surgeon, I)
+	proc/do_implicit_step(mob/surgeon, obj/item/I)
+		var/datum/surgery_step/step = get_implicit_step(surgeon, I)
 		if (step)
 			step.perform_step(surgeon, I)
 			return TRUE
 		return FALSE
 
 	/// Returns the implicit surgery step to be performed by this tool.
-	proc/get_shortcut(mob/surgeon, obj/item/I)
+	proc/get_implicit_step(mob/surgeon, obj/item/I)
 		if ((!super_surgery || super_surgery?.complete) && implicit && can_perform_surgery(surgeon, I))
 			var/datum/surgery_step/step = surgery_step_possible(surgeon, I)
 			if (step)
@@ -166,7 +168,7 @@
 			// do the next implicit step if subsurgeries are implicit
 			for(var/datum/surgery/surgery in current_sub_surgeries)
 				surgery.infer_surgery_stage()
-				var/result = surgery.get_shortcut(surgeon, I)
+				var/result = surgery.get_implicit_step(surgeon, I)
 				if (result)
 					return result
 		return FALSE
@@ -194,6 +196,8 @@
 	proc/can_perform_surgery(mob/living/surgeon, obj/item/tool)
 		return surgery_conditions_met(surgeon, tool) && surgery_possible(surgeon)
 
+	proc/get_desc(show_vague)
+		return
 	// ----------
 	// UI Interaction
 	// ----------
@@ -288,6 +292,7 @@
 		return current_sub_surgeries
 
 	/// Get the progress of the surgery. Returns how many non-optional steps are complete.
+	/// TODO: this should be a var when I've nailed down how to ensure surgeries can 100% reliably update the var when steps are completed, cancelled, or added/removed.
 	proc/get_surgery_progress()
 		var/complete = 0
 		for (var/datum/surgery_step/step in surgery_steps)

@@ -81,7 +81,7 @@
 				SPAN_ALERT("You [fluff] [src] onto the apex of [H == user ? "your" : "[H]'s"] sacrum!"),\
 				SPAN_ALERT("[H == user ? "You" : "<b>[user]</b>"] [fluff][H == user && fluff == "press" ? "es" : "s"] [src] onto the apex of your sacrum!"))
 
-		else if (!H.organHolder.tail && H.surgeryHolder.get_surgery_complete("lower_back_surgery") && src.can_attach_organ(H, user))
+		else if (!H.organHolder.tail && H.surgeryHolder.is_surgery_complete("lower_back_surgery") && src.can_attach_organ(H, user))
 			attachment_successful = 1
 
 			var/fluff = pick("insert", "shove", "place", "drop", "smoosh", "squish")

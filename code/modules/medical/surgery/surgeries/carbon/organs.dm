@@ -1,4 +1,4 @@
-/datum/surgery/organ_surgery
+/datum/surgery/category/organ
 	id = "torso_surgery"
 	name = "Torso Surgery"
 	desc = "Modify the patients' torso and organs."
@@ -131,8 +131,8 @@
 	visible = FALSE
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/fluff/back_cut(src))
-		add_next_step(new /datum/surgery_step/fluff/back_saw(src))
-		add_next_step(new /datum/surgery_step/fluff/back_cut_2(src))
+		add_next_step(new /datum/surgery_step/fluff/back_saw_butt(src))
+		add_next_step(new /datum/surgery_step/fluff/back_cut_intestine(src))
 	surgery_possible(mob/living/surgeon)
 		if (surgeon?.a_intent != INTENT_GRAB)
 			return FALSE
@@ -143,8 +143,9 @@
 			SPAN_NOTICE("You sew the incision on [surgeon == patient ? "your" : "[patient]'s"] lower back closed with [tool]."),\
 			SPAN_NOTICE("[patient == surgeon ? "You sew" : "<b>[surgeon]</b> sews"] the incision on your lower back closed with [tool]."))
 
-	// Show a context menu, even when shortcut
-	do_shortcut(mob/surgeon, obj/item/I)
+	// Show a context menu, even when implicit_step
+	// todo: this should be default behaviour when implicit -> non-implicit
+	do_implicit_step(mob/surgeon, obj/item/I)
 		var/result = ..()
 		if (result)
 			return result
@@ -154,6 +155,20 @@
 				enter_surgery(surgeon)
 				return TRUE
 
+	get_desc()
+		var/steps_complete = src.get_surgery_progress()
+		var/t_his = his_or_her(patient)
+		if (steps_complete > 0) // first person to call this a tailhole is getting dropkicked into the sun
+			if (patient.mob_flags & SHOULD_HAVE_A_TAIL) // Are they supposed to have a tail?
+				if (!patient.organHolder.butt) // Also missing a butt?
+					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision at the base of [t_his] back where [t_his] tail should be!</B>")]"
+				else // has butt
+					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision above [t_his] butt where [t_his] tail should be!</B>")]"
+			else // Do they normally not have a tail?
+				if (!patient.organHolder.butt) // Also missing a butt?
+					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision at the base of [t_his] back!</B>")]"
+				else // has butt
+					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision above [t_his] butt!</B>")]"
 
 /datum/surgery/organ
 	id = "base_organ_surgery"
@@ -337,6 +352,7 @@
 		icon_state = "butt"
 		organ_var_name = "butt"
 		exit_when_finished = TRUE
+		implicit = TRUE
 
 		cancel_possible()
 			return FALSE
@@ -387,6 +403,7 @@
 		icon_state = "tail"
 		organ_var_name = "tail"
 		exit_when_finished = TRUE
+		implicit = TRUE
 		infer_surgery_stage()
 			var/mob/living/carbon/human/C = patient
 			var/organ = C.organHolder.get_organ(organ_var_name)
@@ -439,6 +456,28 @@
 			if (surgeon.a_intent == INTENT_HARM)
 				return FALSE
 			return TRUE
+		get_desc(show_vague)
+			var/steps_complete = src.get_surgery_progress()
+			var/t_his = his_or_her(patient)
+			var/Noun = show_vague ? "[capitalize(t_his)]" : "[src.name]"
+			var/noun_s = show_vague ? t_his : "[src.name]'s" // lowercase, for middle of description
+			var/Noun_s = show_vague ? capitalize(t_his) : "[src.name]'s"
+			if (steps_complete > 0)
+				if (steps_complete >= 5.0)
+					if (!patient.organHolder.skull)
+						. += "<br>[SPAN_ALERT("<B>There's a gaping hole in [noun_s] head and [t_his] skull is gone!</B>")]"
+					else if (!patient.organHolder.brain)
+						. += "<br>[SPAN_ALERT("<B>There's a gaping hole in [noun_s] head and [t_his] brain is gone!</B>")]"
+					else
+						. += "<br>[SPAN_ALERT("<B>There's a gaping hole in [noun_s] head!</B>")]"
+				else if (steps_complete >= 4.0)
+					if (!patient.organHolder.brain)
+						. += "<br>[SPAN_ALERT("<B>[Noun_s] head has been cut open and [t_his] brain is gone!</B>")]"
+					else
+						. += "<br>[SPAN_ALERT("<B>[Noun_s] head has been cut open!</B>")]"
+				else
+					. += "<br>[SPAN_ALERT("<B>[Noun] has an open incision on [t_his] head!</B>")]"
+
 	head
 		id = "head_removal"
 		name = "Head Removal"
@@ -465,6 +504,17 @@
 			if (surgeon.a_intent != INTENT_HARM)
 				return FALSE
 			return TRUE
+		get_desc(show_vague)
+			var/t_his = his_or_her(patient)
+			var/t_he = he_or_she(patient)
+			var/Noun_has = show_vague ? "[capitalize(t_he)] [has_or_have(src)]" : "[src.name] has"
+			var/Noun_s = show_vague ? capitalize(t_his) : "[src.name]'s"
+			var/steps_complete = src.get_surgery_progress()
+			if (steps_complete > 0)
+				if (steps_complete >= 3.0)
+					. += "<br>[SPAN_ALERT("<B>[Noun_s] head is barely attached!</B>")]"
+				else
+					. += "<br>[SPAN_ALERT("<B>[Noun_has] a huge incision across [t_his] neck!</B>")]"
 
 
 /datum/surgery/organ/replace
@@ -564,6 +614,12 @@
 		icon_state = "butt"
 		organ_var_name = "butt"
 		affected_zone = "butt"
+		get_desc(show_vague)
+			var/t_his = his_or_her(patient)
+			var/t_he = he_or_she(patient)
+			var/Noun_has = show_vague ? "[capitalize(t_he)] [has_or_have(src)]" : "[src.name] has"
+			var/Noun_s = show_vague ? capitalize(t_his) : "[src.name]'s"
+			return "<br>[SPAN_ALERT("<B>[Noun_has] an open incision on [t_his] butt!</B>")]"
 	tail
 		id = "tail_replacement"
 		name = "Tail Replacement"

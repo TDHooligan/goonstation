@@ -9,8 +9,7 @@
 	desc = "Heal BRUTE damage."
 
 	generate_surgery_steps()
-		var/coin_toss = prob(50)
-		if(coin_toss)
+		if(prob(50))
 			add_next_step(new /datum/surgery_step/fluff/cut(src))
 		else
 			add_next_step(new /datum/surgery_step/fluff/snip(src))
@@ -45,7 +44,7 @@
 
 /datum/surgery/tend_bleeding
 	name = "Tend bleeding"
-	desc = "Heal BLEED damage with a suture."
+	desc = "Mend bleeding wounds with a suture."
 
 	infer_surgery_stage()
 		surgery_steps[1].finished = (patient.bleeding == 0)
@@ -87,7 +86,7 @@
 			add_next_step( new/datum/surgery_step/cauterize/head(src))
 
 		on_complete(mob/living/surgeon, mob/user)
-			patient.surgeryHolder.cancel_surgery("brain_surgery", surgeon, user)
+			patient.surgeryHolder.cancel_surgery_by_id("brain_surgery", surgeon, user)
 			..()
 
 	bleeding
@@ -103,7 +102,7 @@
 /datum/surgery/sutures
 	default_sub_surgeries = list(/datum/surgery/suture/head, /datum/surgery/suture/torso, /datum/surgery/suture/r_leg, /datum/surgery/suture/l_leg, /datum/surgery/suture/r_arm, /datum/surgery/suture/l_arm, /datum/surgery/suture/bleeding)
 	name = "Suture"
-	desc = "Suture the head, torso, legs, or arms shut."
+	desc = "Suture wounds on the head, torso, legs, or arms."
 	cancel_possible()
 		return FALSE
 	implicit = TRUE
