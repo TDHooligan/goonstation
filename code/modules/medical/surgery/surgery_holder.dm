@@ -29,20 +29,30 @@
 			return TRUE
 		return FALSE
 
-	/// Attempt to perform surgery with the given tool. Returns TRUE if the surgery was performed.
+	proc/is_suture_tool(var/obj/item/tool)
+		if (istype(tool, /obj/item/suture))
+			return TRUE
+		return FALSE
+
+	/// Attempt to perform surgery with the given tool. Returns TRUE if surgery was performed, and attacking shouldn't continue.
 	proc/perform_surgery(var/mob/living/surgeon, var/obj/item/tool)
 		if (do_implicit_step(surgeon,tool))
 			tool.add_fingerprint(surgeon)
 			return TRUE
 
 		if (tool_relevant(surgeon,tool))
-			tool.add_fingerprint(surgeon)
+			if (tool)
+				tool.add_fingerprint(surgeon)
 			if (start_surgery(surgeon,tool))
 				return TRUE
 			else // if the tool is relevant but has no relevant surgery, mess up the patient.
-				if (surgery_conditions_met(surgeon, tool))
-					generic_mess_up(surgeon, tool)
-					return TRUE
+				if (tool && surgery_conditions_met(surgeon, tool))
+					if (is_suture_tool(tool) && surgeon.a_intent != INTENT_HARM)
+						boutput(surgeon, SPAN_ALERT("[patient] has no wounds or incisions to close!"))
+						return TRUE
+					else
+						generic_mess_up(surgeon, tool)
+						return TRUE
 		return FALSE
 
 	/// Index all surgeries, and sub surgeries, inside this holder.
@@ -98,23 +108,28 @@
 
 
 	/// Trigger a surgery's context clicked action. Returns TRUE if a context menu was shown.
-	proc/surgery_clicked(datum/surgery/surgery, mob/living/surgeon, obj/item/I)
+	proc/surgery_clicked(datum/surgery/surgery, mob/living/surgseon, obj/item/I)
 		if (!surgery)
 			return FALSE
 		return surgery.surgery_clicked(surgeon, I)
 
 	/// Returns TRUE if the given tool generally relevant to surgery.
 	proc/tool_relevant(mob/user, obj/item/tool)
-		if (!tool)
-			return FALSE
-		if (tool.tool_flags & relevant_flags)
-			return TRUE
+		for (var/datum/surgery/surgery in base_surgeries)
+			if (surgery.tool_relevant(user, tool))
+				return TRUE
 		return FALSE
 
 	/// Cancel all surgeries.
 	proc/cancel_all()
 		for(var/datum/surgery/surgery in base_surgeries)
 			surgery.cancel_surgery(null, null)
+
+	/// Cancel surgeries in a specific zone.
+	proc/cancel_all_in_zone(var/zone, mob/living/surgeon, obj/item/item, quiet = FALSE)
+		for(var/datum/surgery/surgery in base_surgeries)
+			if (surgery.affected_zone == zone)
+				surgery.cancel_surgery(surgeon, item, quiet=quiet)
 	/// Cancel a surgery through the context menu. This will generally re-open the context action menu.
 	proc/cancel_surgery_context(datum/surgery/surgery, mob/living/surgeon, obj/item/I, quiet = FALSE)
 		if (!surgery)
@@ -223,18 +238,16 @@
 	living
 		add_surgeries()
 			..()
-			base_surgeries += new/datum/surgery/category/limb(patient, src)
-			base_surgeries += new/datum/surgery/category/organ(patient, src)
-			base_surgeries += new/datum/surgery/category/head(patient, src)
-			base_surgeries += new/datum/surgery/category/lower_back(patient, src)
-			base_surgeries += new/datum/surgery/implant(patient, src)
-			base_surgeries += new/datum/surgery/parasite(patient, src)
-			base_surgeries += new/datum/surgery/sutures(patient, src)
+			base_surgeries += new/datum/surgery/carbon/category/limb(patient, src)
+			base_surgeries += new/datum/surgery/carbon/category/organ(patient, src)
+			base_surgeries += new/datum/surgery/carbon/category/head(patient, src)
+			base_surgeries += new/datum/surgery/carbon/category/lower_back(patient, src)
+			base_surgeries += new/datum/surgery/carbon/implant(patient, src)
+			base_surgeries += new/datum/surgery/carbon/parasite(patient, src)
+			base_surgeries += new/datum/surgery/carbon/sutures(patient, src)
 			// put skeleton surgeries up here, as they can all be performed at any time
-			base_surgeries += new/datum/surgery/skeleton(patient, src)
-			base_surgeries += new/datum/surgery/cauterize/bleeding(patient, src)
-
-
+			base_surgeries += new/datum/surgery/carbon/skeleton(patient, src)
+			base_surgeries += new/datum/surgery/carbon/cauterize/bleeding(patient, src)
 
 
 

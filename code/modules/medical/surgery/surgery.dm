@@ -23,13 +23,15 @@
 	var/list/current_sub_surgeries
 	/// Surgeries to add to this surgery by default.
 	var/list/default_sub_surgeries
-	/// Roughly the part of the body this surgery is performed on. Used for cancelling surgeries.
+	/// The body zone this surgery affects, for suturing and checking what surgeries can be performed.
 	var/affected_zone = "chest"
+	/// Whether this surgery can be cancelled with a suture or staple gun.
+	var/can_cancel = TRUE
 
 	var/last_surgery_step = 0 //! Do not modify - Tracks the last step ID added, used for ordering steps.
 	var/complete = FALSE //! If TRUE, the surgery is complete.
 	var/visible = TRUE //! if TRUE, the surgery will be visible in the context menu.
-	var/cancel_button = FALSE //! If TRUE, the surgery will show a cancel button in the context menu.
+	var/cancel_button = TRUE //! If TRUE, the surgery will show a cancel button in the context menu.
 	var/datum/surgeryHolder/holder = null
 	var/mob/living/patient = null
 
@@ -91,30 +93,16 @@
 
 	/// Check if any steps are possible on the target using the given tool. Return the first possible step.
 	proc/surgery_step_possible(mob/surgeon, obj/item/tool)
-		var/list/completed_ids = list()
-		completed_ids += TRUE // Simultaneous steps are always complete
+		var/completed_count = 0
 
-		// Create a list, where each index is the step number, and the value is whether all steps matching that step number are complete
 		for(var/datum/surgery_step/step in surgery_steps)
-			if (step.step_number == 0)
-				continue
-			while (length(completed_ids)-1 < step.step_number)
-				completed_ids += TRUE
-			completed_ids[step.step_number] = (completed_ids[step.step_number] && step.finished)
+			if (step.finished && step.step_number != 0)
+				completed_count = max(step.step_number, completed_count)
 
-		// Some steps will be completed out of order, due to being unnecessary etc.
-		// Find the highest consecutive step number that is complete.
-		var/max_step_number = 0
-		for (var/i=1, i <= length(completed_ids), i++)
-			if (completed_ids[i])
-				max_step_number = i
-			else
-				break
-		max_step_number++
-
+		completed_count++
 		// Now check if any steps are possible with the given tool, at this point in time.
 		for (var/datum/surgery_step/step in surgery_steps)
-			if (step.step_number <= max_step_number)
+			if (step.step_number <= completed_count)
 				if (!step.finished && step.can_operate(surgeon, tool))
 					return step
 		return FALSE
@@ -141,11 +129,11 @@
 				return
 			stapler.ammo--
 		on_cancel(surgeon, I, quiet=quiet)
-		complete = FALSE
 		for(var/datum/surgery_step/step in surgery_steps)
 			step.finished = FALSE
 		for(var/datum/surgery/surgery in current_sub_surgeries)
 			surgery.cancel_surgery(surgeon, I, quiet=TRUE)
+		infer_surgery_stage()
 		if (from_context)
 			super_surgery?.enter_surgery(surgeon)
 
@@ -197,6 +185,8 @@
 		return surgery_conditions_met(surgeon, tool) && surgery_possible(surgeon)
 
 	proc/get_desc(show_vague)
+		for (var/datum/surgery/surgery in current_sub_surgeries)
+			. += surgery.get_desc(show_vague)
 		return
 	// ----------
 	// UI Interaction
@@ -236,7 +226,7 @@
 			action.icon_background = "yellowbg"
 		return action
 
-	/// Gets the context actions for this surgeries's steps.
+	/// Gets the context actions for this surgeries' steps.
 	proc/get_surgery_contexts(surgeon, obj/item/tool, var/add_navigation = TRUE)
 		var/list/datum/contextAction/surgical_step/contexts = list()
 		var/completed_stages = 0
@@ -289,16 +279,23 @@
 		for(var/datum/surgery/surgery in current_sub_surgeries)
 			response += surgery
 			response += surgery.get_sub_surgeries()
-		return current_sub_surgeries
+		return response
 
-	/// Get the progress of the surgery. Returns how many non-optional steps are complete.
+	/// Get the progress of the surgery.
 	/// TODO: this should be a var when I've nailed down how to ensure surgeries can 100% reliably update the var when steps are completed, cancelled, or added/removed.
 	proc/get_surgery_progress()
-		var/complete = 0
+		// TODO: This needs to pick the lowest unfinished step number
+		var/lowest_incomplete = 99
+		var/any_complete = FALSE
 		for (var/datum/surgery_step/step in surgery_steps)
 			if (step.finished && !step.optional)
-				complete++
-		return complete
+				any_complete = TRUE
+			if (!step.finished && !step.optional)
+				lowest_incomplete = min(step.step_number, lowest_incomplete)
+		if (!any_complete)
+			return 0
+		else
+			return lowest_incomplete - 1
 
 	// ----------
 	// Surgery logic
@@ -307,6 +304,17 @@
 	/// Returns true if sub surgeries are possible.
 	proc/sub_surgery_possible(mob/surgeon, obj/item/I)
 		return (sub_surgeries_always_possible || complete)
+
+	proc/tool_relevant(mob/surgeon, obj/item/tool)
+		for (var/datum/surgery_step/step in surgery_steps)
+			if (step.can_operate(surgeon, tool))
+				return TRUE
+		if (complete)
+			for (var/datum/surgery/surgery in current_sub_surgeries)
+				if (surgery.tool_relevant(surgeon, tool))
+					return TRUE
+		return FALSE
+
 
 	/// Check if the patient can have this surgery performed on them here. IE: on a table.
 	/// Use 'tool' here to see if an item could ignore being on a table.
@@ -327,35 +335,26 @@
 			return TRUE
 		return FALSE
 
-
-	/// Calculate how much damage should be multiplied by, when being performed.
-	proc/surgery_damage_multiplier(mob/living/surgeon, obj/item/tool)
-		var/base = 1
-		if(patient == surgeon)
-			if (patient.reagents)
-				if (patient.reagents.get_reagent_amount("ethanol") > 40)
-					base *= 3.5
-				else if (patient.reagents.get_reagent_amount("morphine") > 5)
-					base *= 2
-			else
-				base *= 3.5
-		return 1
-
 	proc/cancel_possible()
-		return (get_surgery_progress() > 0)
+		return (can_cancel && get_surgery_progress() > 0)
 
 	//-----
 	// Hooks
 	//-----
 
 	/// Determine which steps are already complete based upon the patient's current state.
+
 	proc/infer_surgery_stage()
+		SHOULD_CALL_PARENT(TRUE)
+		complete = surgery_complete()
 
 	///Create & add the surgery steps for this surgery
 	proc/generate_surgery_steps()
 
 	///Whether this surgery is possible on the target - Otherwise, will be hidden from the context menu
 	proc/surgery_possible(mob/living/surgeon)
+		if (surgeon.zone_sel.selecting != affected_zone)
+			return FALSE
 		return TRUE
 
 	/// Called on completion of the surgery.
@@ -366,7 +365,8 @@
 /datum/surgery_step
 	var/flags_required = 0 //! Flags for tools that are accepted for this step
 	var/tools_required = list() //! Explicit tools required, alongside their failure chance, if you want ghetto analogs
-	var/step_number = 0 //! The step number in the surgery. Set by the surgery when added.
+	var/allow_no_tool = FALSE //! Whether this step can be performed without a tool, if the tool requirements are met.
+	var/step_number = 0 //! The step number in the surgery. Set by the surgery when added. '0' means the step can be performed at any time.
 	var/name = "Base surgery step"
 	var/desc = "Call 1-800-IMCODER."
 	var/icon_state = "scissor"
@@ -413,6 +413,14 @@
 		if (!messup_texts)
 			messup_texts = list(" messes up", "'s hand slips", "'s hand twitches")
 		return pick(messup_texts)
+	proc/tool_relevant(mob/surgeon, obj/item/tool)
+		if (tool)
+			if (tool.tool_flags & flags_required)
+				return TRUE
+		else if (allow_no_tool)
+			return TRUE
+		return FALSE
+
 	proc/can_operate(mob/surgeon, obj/item/tool, quiet = TRUE)
 		if (finished)
 			return FALSE

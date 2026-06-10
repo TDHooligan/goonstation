@@ -1,4 +1,4 @@
-/datum/surgery/category/limb
+/datum/surgery/carbon/category/limb
 	id = "limb_surgery"
 	name = "Limb Surgery"
 	desc = "Modify the patients' limbs."
@@ -6,13 +6,13 @@
 	implicit = TRUE
 
 	default_sub_surgeries = list(
-	/datum/surgery/limb/arm/l_arm,
-	/datum/surgery/limb/arm/r_arm,
-	/datum/surgery/limb/leg/l_leg,
-	/datum/surgery/limb/leg/r_leg
+	/datum/surgery/carbon/limb/arm/l_arm,
+	/datum/surgery/carbon/limb/arm/r_arm,
+	/datum/surgery/carbon/limb/leg/l_leg,
+	/datum/surgery/carbon/limb/leg/r_leg
 	)
 
-/datum/surgery/limb
+/datum/surgery/carbon/limb
 	name = "Base Limb Surgery"
 	desc = "Call a coder if you see this!"
 	id = "limb_surgery_base"
@@ -60,8 +60,8 @@
 		if (limb && limb.remove_stage != 0)
 			limb.remove_stage = 0
 			surgeon.visible_message(SPAN_ALERT("[surgeon] attaches [C.name]'s [limb.name] securely with [tool]."), SPAN_ALERT("You attach [C.name]'s [limb.name] securely with [tool]."))
-			logTheThing(LOG_COMBAT, surgeon, "staples [constructTarget(holder,"combat")]'s [src.name] back on.")
-			logTheThing(LOG_DIARY, surgeon, "staples [constructTarget(holder,"diary")]'s [src.name] back on.", "combat")
+			logTheThing(LOG_COMBAT, surgeon, "staples [constructTarget(holder,"combat")]'s [patient.name] back on.")
+			logTheThing(LOG_DIARY, surgeon, "staples [constructTarget(holder,"diary")]'s [patient.name] back on.", "combat")
 
 
 

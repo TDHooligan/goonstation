@@ -383,9 +383,6 @@ CONTAINS:
 			if (human.surgeryHolder.will_perform_surgery(user,src))
 				human.surgeryHolder.perform_surgery(user,src)
 				return
-		if (user.a_intent != INTENT_HARM)
-			boutput(user, SPAN_ALERT("[target] has no wounds or incisions to close!"))
-			return
 		return ..()
 
 /obj/item/suture/vr
@@ -540,23 +537,7 @@ CONTAINS:
 			if (zone && surgery_status)
 				target.visible_message(SPAN_SUCCESS("[owner] [vrb]es the surgical incisions on [owner == target ? his_or_her(owner) : "[target]'s"] [zone_sel2name[zone]] closed with [tool]."),
 				SPAN_SUCCESS("[owner == target ? "You [vrb]e" : "[owner] [vrb]es"] the surgical incisions on your [zone_sel2name[zone]] closed with [tool]."))
-				target.surgeryHolder.cancel_all()
-				if (target.organHolder)
-					if (zone == "chest")
-						if (target.organHolder.heart)
-							target.organHolder.heart.op_stage = 0
-						if (target.organHolder.chest)
-							target.organHolder.chest.op_stage = 0
-						target.surgeryHolder.cancel_surgery_by_id("lower_back_surgery")
-
-						target.TakeDamage("chest", 2, 0)
-					else if (zone == "head")
-						if (target.organHolder.head)
-							target.organHolder.head.op_stage = 0
-						if (target.organHolder.skull)
-							target.organHolder.skull.op_stage = 0
-						if (target.organHolder.brain)
-							target.organHolder.brain.op_stage = 0
+				target.surgeryHolder.cancel_all_in_zone(zone)
 				if (target.bleeding)
 					repair_bleeding_damage(target, 100, repair_amount)
 			else
@@ -766,30 +747,15 @@ CONTAINS:
 	hide_attack = ATTACK_PARTIALLY_HIDDEN
 
 	attack(mob/target, mob/user, def_zone, is_special = FALSE, params = null)
-		if (!ishuman(target))
-			if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
-				return
+		if (is_special)
 			return ..()
-		var/mob/living/carbon/human/H = target
-		// var/surgery_status = H.get_surgery_status(user.zone_sel.selecting)
-		// if (!surgery_status)
-		// 	if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
-		// 		return
-		// 	return ..()
-		// if (!surgeryCheck(H, user))
-		// 	if (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB)
-		// 		return
-		// 	return ..()
-		if (H.chest_cavity_clamped && !H.bleeding)
-			boutput(user, SPAN_NOTICE("[target]'s blood vessels are already clamped."))
-			return
-		if (H.organHolder.chest.op_stage > 0 || H.bleeding)
-			user.tri_message(H, SPAN_ALERT("<b>[user]</b> begins clamping the bleeders in [H == user ? "[his_or_her(H)]" : "[H]'s"] incision with [src]."),\
-				SPAN_ALERT("You begin clamping the bleeders in [user == H ? "your" : "[H]'s"] incision with [src]."),\
-				SPAN_ALERT("[H == user ? "You begin" : "<b>[user]</b> begins"] clamping the bleeders in your incision with [src]."))
-
-			actions.start(new/datum/action/bar/icon/clamp_bleeders(user, H), user)
-			return
+		if (!ishuman(target))
+			var/mob/living/carbon/H = target
+			if (H.surgeryHolder && (user.a_intent == INTENT_HELP || user.a_intent == INTENT_GRAB))
+				if (!H.surgeryHolder.will_perform_surgery(user, src))
+					boutput(user, SPAN_NOTICE("[target]'s blood vessels are already clamped."))
+					return
+		return ..()
 
 /* ======================================================= */
 /* -------------------- Reflex Hammer -------------------- */

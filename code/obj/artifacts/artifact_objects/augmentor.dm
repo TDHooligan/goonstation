@@ -141,7 +141,7 @@
 					ArtifactLogs(user, null, O, "touched by [H.real_name]", "given limb [part] as [part_loc]", 0)
 				else // ORGANS
 					var/obj/item/organ/organ = part
-					H.organHolder.chest?.op_stage = 2
+					// H.organHolder.chest?.op_stage = 2
 					// switch (organ.region)
 					// 	if(RIBS)
 					// 		if (H.organHolder.ribs_stage != REGION_OPENED)

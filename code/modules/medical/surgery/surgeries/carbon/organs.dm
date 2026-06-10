@@ -1,18 +1,17 @@
-/datum/surgery/category/organ
+/datum/surgery/carbon/category/organ
 	id = "torso_surgery"
 	name = "Torso Surgery"
 	desc = "Modify the patients' torso and organs."
 	icon_state = "torso"
+	affected_zone = "chest"
 	implicit = TRUE
-	default_sub_surgeries = list(/datum/surgery/ribs, /datum/surgery/subcostal, /datum/surgery/flanks,
-	/datum/surgery/abdomen, /datum/surgery/item, /datum/surgery/chest_clamp)
+	default_sub_surgeries = list(/datum/surgery/carbon/ribs, /datum/surgery/carbon/subcostal, /datum/surgery/carbon/flanks,
+	/datum/surgery/carbon/abdomen, /datum/surgery/carbon/item, /datum/surgery/carbon/chest_clamp)
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/chest/cut(src))
 		add_next_step(new /datum/surgery_step/fluff/snip(src))
 
 	surgery_possible(mob/living/surgeon)
-		if (surgeon.zone_sel.selecting != "chest")
-			return FALSE
 		if (surgeon.a_intent == INTENT_GRAB) // we're doing tail/butt surgery
 			return FALSE
 		return ..()
@@ -20,9 +19,21 @@
 		surgeon.tri_message(patient, SPAN_NOTICE("<b>[surgeon]</b> sews the incision on [patient == surgeon ? "[his_or_her(patient)]" : "[patient]'s"] chest closed with [tool]."),\
 			SPAN_NOTICE("You sew the incision on [surgeon == patient ? "your" : "[patient]'s"] chest closed with [tool]."),\
 			SPAN_NOTICE("[patient == surgeon ? "You sew" : "<b>[surgeon]</b> sews"] the incision on your chest closed with [tool]."))
+	get_desc(show_vague)
+		var/t_his = his_or_her(patient)
+		var/Noun = capitalize(t_his)
+		var/noun_s = show_vague ? t_his : "[patient.name]'s" // lowercase, for middle of description
+		var/Noun_s = show_vague ? capitalize(t_his) : "[patient.name]'s"
+		var/steps_complete = src.get_surgery_progress()
+		if (complete)
+			if (patient.organHolder.heart)
+				. += "<br>[SPAN_ALERT("<B>[Noun_s]'s chest is cut wide open!</B>")]"
+			else
+				. += "<br>[SPAN_ALERT("<B>[Noun_s] chest is cut wide open and [t_his] heart has been removed!</B>")]"
+		else if (steps_complete > 0)
+			. += "<br>[SPAN_ALERT("<B>[Noun] has an indeterminate number of small surgical scars on [t_his] chest!</B>")]"
 
-
-/datum/surgery/chest_clamp
+/datum/surgery/carbon/chest_clamp
 	id = "chest_clamp"
 	name = "Chest Clamp"
 	desc = "Clamp the patient's chest"
@@ -37,19 +48,22 @@
 		var/mob/living/carbon/human/C = patient
 		return C.chest_cavity_clamped == FALSE
 
+	get_desc(show_vague)
+		var/t_his = his_or_her(patient)
+		var/noun_s = show_vague ? t_his : "[patient.name]'s" // lowercase, for middle of description
+		if (!complete)
+			. += "<br>[SPAN_ALERT("<B>Blood is slowly seeping out of [noun_s] un-clamped chest wound.</B>")]"
 
-
-/datum/surgery/category/head
+/datum/surgery/carbon/category/head
 	id = "head_surgery"
 	name = "Head Surgery"
 	desc = "Perform surgery on the patient's head"
 	default_sub_surgeries = list(
-		/datum/surgery/organ/eye/left, /datum/surgery/organ/replace/eye/left,
-		/datum/surgery/organ/eye/right, /datum/surgery/organ/replace/eye/right,
-		/datum/surgery/organ/brain, /datum/surgery/organ/replace/brain,
-		/datum/surgery/organ/head, /datum/surgery/organ/replace/head,
-		/datum/surgery/cauterize/head,
-		/datum/surgery/organ/replace/brain, /datum/surgery/organ/replace/skull)
+		/datum/surgery/carbon/organ/eye/left, /datum/surgery/carbon/organ/replace/eye/left,
+		/datum/surgery/carbon/organ/eye/right, /datum/surgery/carbon/organ/replace/eye/right,
+		/datum/surgery/carbon/organ/brain, /datum/surgery/carbon/organ/replace/brain,
+		/datum/surgery/carbon/organ/head, /datum/surgery/carbon/organ/replace/head,
+		/datum/surgery/carbon/cauterize/head)
 	visible = FALSE
 	implicit = TRUE
 	affected_zone = "head"
@@ -67,67 +81,67 @@
 		return ..()
 
 
-/datum/surgery/ribs
+/datum/surgery/carbon/ribs
 	id = "rib_surgery"
 	name = "Rib Surgery"
 	desc = "Open the patient's ribcage"
 	icon_state = "ribs"
 	affected_zone = "chest"
-	default_sub_surgeries = list(/datum/surgery/organ/heart, /datum/surgery/organ/replace/heart,
-	/datum/surgery/organ/left_lung, /datum/surgery/organ/replace/left_lung,
-	/datum/surgery/organ/right_lung, /datum/surgery/organ/replace/right_lung)
+	default_sub_surgeries = list(/datum/surgery/carbon/organ/heart, /datum/surgery/carbon/organ/replace/heart,
+	/datum/surgery/carbon/organ/left_lung, /datum/surgery/carbon/organ/replace/left_lung,
+	/datum/surgery/carbon/organ/right_lung, /datum/surgery/carbon/organ/replace/right_lung)
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/fluff/cut(src))
 		add_next_step(new /datum/surgery_step/fluff/saw(src))
 		add_next_step(new /datum/surgery_step/fluff/snip(src))
 
-/datum/surgery/subcostal
+/datum/surgery/carbon/subcostal
 	id = "subcostal"
 	name = "Subcostal"
 	desc = "Open the subcostal region"
 	icon_state = "subcostal"
 	affected_zone = "chest"
-	default_sub_surgeries = list(/datum/surgery/organ/liver, /datum/surgery/organ/replace/liver,
-	/datum/surgery/organ/spleen, /datum/surgery/organ/replace/spleen,
-	/datum/surgery/organ/pancreas, /datum/surgery/organ/replace/pancreas)
+	default_sub_surgeries = list(/datum/surgery/carbon/organ/liver, /datum/surgery/carbon/organ/replace/liver,
+	/datum/surgery/carbon/organ/spleen, /datum/surgery/carbon/organ/replace/spleen,
+	/datum/surgery/carbon/organ/pancreas, /datum/surgery/carbon/organ/replace/pancreas)
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/fluff/cut(src))
 		add_next_step(new /datum/surgery_step/fluff/snip(src))
 
 
 
-/datum/surgery/flanks
+/datum/surgery/carbon/flanks
 	id = "flank_surgery"
 	name = "Flank Surgery"
 	desc = "Open the patient's flanks"
 	icon_state = "flanks"
 	affected_zone = "chest"
-	default_sub_surgeries = list(/datum/surgery/organ/left_kidney, /datum/surgery/organ/replace/left_kidney,
-	/datum/surgery/organ/right_kidney, /datum/surgery/organ/replace/right_kidney)
+	default_sub_surgeries = list(/datum/surgery/carbon/organ/left_kidney, /datum/surgery/carbon/organ/replace/left_kidney,
+	/datum/surgery/carbon/organ/right_kidney, /datum/surgery/carbon/organ/replace/right_kidney)
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/fluff/cut(src))
 		add_next_step(new /datum/surgery_step/fluff/snip(src))
 
-/datum/surgery/abdomen
+/datum/surgery/carbon/abdomen
 	id = "abdomen_surgery"
 	name = "Abdomen Surgery"
 	desc = "Open the patient's abdomen"
 	icon_state = "abdominal"
 	affected_zone = "chest"
-	default_sub_surgeries = list(/datum/surgery/organ/stomach, /datum/surgery/organ/replace/stomach,
-	/datum/surgery/organ/intestine, /datum/surgery/organ/replace/intestine,
-	/datum/surgery/organ/appendix, /datum/surgery/organ/replace/appendix)
+	default_sub_surgeries = list(/datum/surgery/carbon/organ/stomach, /datum/surgery/carbon/organ/replace/stomach,
+	/datum/surgery/carbon/organ/intestine, /datum/surgery/carbon/organ/replace/intestine,
+	/datum/surgery/carbon/organ/appendix, /datum/surgery/carbon/organ/replace/appendix)
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/fluff/cut(src))
 		add_next_step(new /datum/surgery_step/fluff/snip(src))
 
 
-/datum/surgery/category/lower_back
+/datum/surgery/carbon/category/lower_back
 	id = "lower_back_surgery"
 	name = "Lower Back Surgery"
 	desc = "Remove the patients' tail or butt."
-	default_sub_surgeries = list(/datum/surgery/organ/butt, /datum/surgery/organ/replace/butt,
-		/datum/surgery/organ/tail, /datum/surgery/organ/replace/tail
+	default_sub_surgeries = list(/datum/surgery/carbon/organ/butt, /datum/surgery/carbon/organ/replace/butt,
+		/datum/surgery/carbon/organ/tail, /datum/surgery/carbon/organ/replace/tail
 	)
 	implicit = TRUE
 	visible = FALSE
@@ -177,7 +191,7 @@
 				else // has butt
 					. += "<br>[SPAN_ALERT("<B>[patient.name] has a large incision above [t_his] butt!</B>")]"
 
-/datum/surgery/organ
+/datum/surgery/carbon/organ
 	id = "base_organ_surgery"
 	name = "Base Organ Surgery"
 	desc = "Call a coder if you see this!"
@@ -185,6 +199,7 @@
 	var/organ_var_name = "thing"
 	var/organ_pretty_name
 	exit_when_finished = TRUE
+
 	affected_zone = "chest"
 
 	surgery_possible(mob/living/surgeon)
@@ -193,17 +208,6 @@
 		if (patient.organHolder.get_organ(organ_var_name))
 			return TRUE
 		return FALSE
-	infer_surgery_stage()
-		var/mob/living/carbon/human/C = patient
-		var/organ = C.organHolder.get_organ(organ_var_name)
-		if (organ)
-			surgery_steps[1].finished = organ:op_stage >= 1
-			surgery_steps[2].finished = organ:op_stage >= 2
-			surgery_steps[3].finished = organ:op_stage >= 3
-		else
-			surgery_steps[1].finished = TRUE
-			surgery_steps[2].finished = TRUE
-			surgery_steps[3].finished = TRUE
 
 	on_cancel(mob/living/surgeon, obj/item/tool, quiet)
 		var/obj/O = patient.organHolder.vars[organ_var_name]
@@ -214,13 +218,21 @@
 				surgeon.tri_message(patient, SPAN_NOTICE("<b>[surgeon]</b> secures [patient == surgeon ? "[his_or_her(patient)]" : "[patient]'s"] [organ_name] back into place with [tool]."),\
 				SPAN_NOTICE("You secure [surgeon == patient ? "your" : "[patient]'s"] [organ_name] back into place with [tool]."),\
 				SPAN_NOTICE("[patient == surgeon ? "You sew" : "<b>[surgeon]</b> sews"] your [organ_name] back  into place closed with [tool]."))
-				O:op_stage = 0
+
+	on_complete(mob/surgeon, obj/item/I)
+		. = ..()
+		for (var/datum/surgery_step/step in surgery_steps) // reset all steps - the next organ is good as new!
+			step.finished = FALSE
+
+		// Re-open context buttons for the surgeon, so the replaced organ shows up for surgery again.
+		for (var/atom/movable/screen/contextButton/C in surgeon.contextButtons)
+			if (istype(C.action, /datum/contextAction/surgery))
+				var/datum/contextAction/surgery/surgeryAction = C.action
+				if (surgeryAction.surgery.super_surgery == src.super_surgery)
+					surgeon.closeContextActions()
+					src.super_surgery.enter_surgery(surgeon, I)
 
 
-
-	cancel_possible()
-		var/obj/item/organ/O = patient.organHolder.vars[organ_var_name]
-		return (O != null && O.op_stage > 0)
 
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/organ/cut(src, organ_var_name)) // Makes the organ count as 'in surgery'
@@ -230,7 +242,7 @@
 	surgery_clicked(mob/living/surgeon, obj/item/tool)
 		var/obj/item/organ = patient.organHolder.get_organ(organ_var_name)
 		if (!tool)
-			actions.start(new/datum/action/bar/icon/remove_organ(surgeon, patient, organ_var_name, src.name, src, TRUE, organ.icon, organ.icon_state), surgeon)
+			actions.start(new/datum/action/bar/icon/remove_organ(surgeon, patient, organ_var_name, patient.name, src, TRUE, organ.icon, organ.icon_state), surgeon)
 			return
 		..()
 	heart
@@ -330,9 +342,6 @@
 					surgeon.tri_message(patient, SPAN_NOTICE("<b>[surgeon]</b> sews the incision in [patient == surgeon ? "[his_or_her(patient)]" : "[patient]'s"] left eye socket closed with [tool]."),\
 						SPAN_NOTICE("You sew the incision in [surgeon == patient ? "your" : "[patient]'s"] left eye socket closed with [tool]."),\
 						SPAN_NOTICE("[patient == surgeon ? "You sew" : "<b>[surgeon]</b> sews"] the incision in your left eye socket closed with [tool]."))
-				var/obj/item/organ/O = patient.organHolder.vars[organ_var_name]
-				if (O)
-					O.op_stage = 0
 
 		right
 			id = "right_eye_surgery"
@@ -349,9 +358,6 @@
 					surgeon.tri_message(patient, SPAN_NOTICE("<b>[surgeon]</b> sews the incision in [patient == surgeon ? "[his_or_her(patient)]" : "[patient]'s"] right eye socket closed with [tool]."),\
 						SPAN_NOTICE("You sew the incision in [surgeon == patient ? "your" : "[patient]'s"] right eye socket closed with [tool]."),\
 						SPAN_NOTICE("[patient == surgeon ? "You sew" : "<b>[surgeon]</b> sews"] the incision in your right eye socket closed with [tool]."))
-				var/obj/item/organ/O = patient.organHolder.vars[organ_var_name]
-				if (O)
-					O.op_stage = 0
 	butt
 		id = "butt_surgery"
 		name = "Butt Surgery"
@@ -360,6 +366,7 @@
 		organ_var_name = "butt"
 		exit_when_finished = TRUE
 		implicit = TRUE
+		affected_zone = "chest"
 
 		cancel_possible()
 			return FALSE
@@ -391,7 +398,7 @@
 		surgery_possible(mob/living/surgeon)
 			if (surgeon.zone_sel.selecting != "head")
 				return FALSE
-			if (surgeon.a_intent == INTENT_HARM)
+			if (surgeon.a_intent == INTENT_HARM) // head removal
 				return FALSE
 			return TRUE
 		on_cancel(mob/surgeon, obj/item/tool, quiet)
@@ -403,6 +410,9 @@
 			add_next_step(new /datum/surgery_step/skull/cut(src))
 			add_next_step(new /datum/surgery_step/skull/remove(src))
 			add_next_step(new /datum/surgery_step/organ/add/skull(src, organ_var_name))
+
+		get_desc()
+
 	tail
 		id = "tail_surgery"
 		name = "Tail Surgery"
@@ -431,22 +441,14 @@
 		affected_zone = "head"
 		organ_var_name = "brain"
 		implicit = TRUE
-		default_sub_surgeries = list(/datum/surgery/organ/skull, /datum/surgery/organ/replace/skull)
-
+		default_sub_surgeries = list(/datum/surgery/carbon/organ/skull, /datum/surgery/carbon/organ/replace/skull)
 		infer_surgery_stage()
 			var/mob/living/carbon/human/C = patient
 			if (C.organHolder.brain)
-				surgery_steps[1].finished = C.organHolder.brain.op_stage >= 1
-				surgery_steps[2].finished = C.organHolder.brain.op_stage >= 2
-				surgery_steps[3].finished = C.organHolder.brain.op_stage >= 3
 				surgery_steps[4].finished = FALSE
 			else
-				surgery_steps[1].finished = TRUE
-				surgery_steps[2].finished = TRUE
-				surgery_steps[3].finished = TRUE
 				surgery_steps[4].finished = TRUE
 			return
-
 		generate_surgery_steps()
 			add_next_step(new /datum/surgery_step/organ/brain/cut(src, organ_var_name))
 			add_next_step(new /datum/surgery_step/organ/brain/saw(src, organ_var_name))
@@ -466,18 +468,18 @@
 		get_desc(show_vague)
 			var/steps_complete = src.get_surgery_progress()
 			var/t_his = his_or_her(patient)
-			var/Noun = show_vague ? "[capitalize(t_his)]" : "[src.name]"
-			var/noun_s = show_vague ? t_his : "[src.name]'s" // lowercase, for middle of description
-			var/Noun_s = show_vague ? capitalize(t_his) : "[src.name]'s"
+			var/Noun = show_vague ? "[capitalize(t_his)]" : "[patient.name]"
+			var/noun_s = show_vague ? t_his : "[patient.name]'s" // lowercase, for middle of description
+			var/Noun_s = show_vague ? capitalize(t_his) : "[patient.name]'s"
 			if (steps_complete > 0)
-				if (steps_complete >= 5.0)
+				if (steps_complete >= 3.0)
 					if (!patient.organHolder.skull)
 						. += "<br>[SPAN_ALERT("<B>There's a gaping hole in [noun_s] head and [t_his] skull is gone!</B>")]"
 					else if (!patient.organHolder.brain)
 						. += "<br>[SPAN_ALERT("<B>There's a gaping hole in [noun_s] head and [t_his] brain is gone!</B>")]"
 					else
 						. += "<br>[SPAN_ALERT("<B>There's a gaping hole in [noun_s] head!</B>")]"
-				else if (steps_complete >= 4.0)
+				else if (steps_complete >= 2.0)
 					if (!patient.organHolder.brain)
 						. += "<br>[SPAN_ALERT("<B>[Noun_s] head has been cut open and [t_his] brain is gone!</B>")]"
 					else
@@ -495,9 +497,6 @@
 		infer_surgery_stage()
 			var/mob/living/carbon/human/C = patient
 			var/no_head = !C.organHolder.get_organ(organ_var_name)
-			surgery_steps[1].finished = no_head || C.organHolder.head.op_stage >= 1
-			surgery_steps[2].finished = no_head || C.organHolder.head.op_stage >= 2
-			surgery_steps[3].finished = no_head || C.organHolder.head.op_stage >= 3
 			surgery_steps[4].finished = no_head
 			return
 		generate_surgery_steps()
@@ -514,17 +513,17 @@
 		get_desc(show_vague)
 			var/t_his = his_or_her(patient)
 			var/t_he = he_or_she(patient)
-			var/Noun_has = show_vague ? "[capitalize(t_he)] [has_or_have(src)]" : "[src.name] has"
-			var/Noun_s = show_vague ? capitalize(t_his) : "[src.name]'s"
+			var/Noun_has = show_vague ? "[capitalize(t_he)] [has_or_have(src)]" : "[patient.name] has"
+			var/Noun_s = show_vague ? capitalize(t_his) : "[patient.name]'s"
 			var/steps_complete = src.get_surgery_progress()
 			if (steps_complete > 0)
-				if (steps_complete >= 3.0)
+				if (steps_complete == 3.0)
 					. += "<br>[SPAN_ALERT("<B>[Noun_s] head is barely attached!</B>")]"
 				else
 					. += "<br>[SPAN_ALERT("<B>[Noun_has] a huge incision across [t_his] neck!</B>")]"
 
 
-/datum/surgery/organ/replace
+/datum/surgery/carbon/organ/replace
 	id = "organ_addition"
 	name = "Organ Addition"
 	desc = "Replace the patients' organs."
@@ -624,8 +623,8 @@
 		get_desc(show_vague)
 			var/t_his = his_or_her(patient)
 			var/t_he = he_or_she(patient)
-			var/Noun_has = show_vague ? "[capitalize(t_he)] [has_or_have(src)]" : "[src.name] has"
-			var/Noun_s = show_vague ? capitalize(t_his) : "[src.name]'s"
+			var/Noun_has = show_vague ? "[capitalize(t_he)] [has_or_have(src)]" : "[patient.name] has"
+			var/Noun_s = show_vague ? capitalize(t_his) : "[patient.name]'s"
 			return "<br>[SPAN_ALERT("<B>[Noun_has] an open incision on [t_his] butt!</B>")]"
 	tail
 		id = "tail_replacement"

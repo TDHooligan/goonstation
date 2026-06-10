@@ -1,4 +1,4 @@
-/datum/surgery/implant
+/datum/surgery/carbon/implant
 	id = "implant_surgery"
 	name = "Implant Surgery"
 	desc = "Remove an implant from the patients' body."
@@ -35,7 +35,7 @@
 			I.pixel_y = rand(-6, 1)
 			return ..()
 
-/datum/surgery/parasite
+/datum/surgery/carbon/parasite
 	name = "Parasite Surgery"
 	desc = "Cut out one or multiple parasites."
 	icon_state = "parasite"

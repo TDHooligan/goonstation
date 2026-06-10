@@ -1,10 +1,10 @@
 
-/datum/surgery/heal_generic
+/datum/surgery/carbon/heal_generic
 	name = "First Aid"
 	desc = "Heal BRUTE, BURN, or bleeding damage with surgery."
-	default_sub_surgeries = list(/datum/surgery/heal_brute,	/datum/surgery/heal_burn, /datum/surgery/tend_bleeding)
+	default_sub_surgeries = list(/datum/surgery/carbon/heal_brute,	/datum/surgery/carbon/heal_burn, /datum/surgery/carbon/tend_bleeding)
 
-/datum/surgery/heal_brute
+/datum/surgery/carbon/heal_brute
 	name = "Tend wounds"
 	desc = "Heal BRUTE damage."
 
@@ -15,7 +15,7 @@
 			add_next_step(new /datum/surgery_step/fluff/snip(src))
 		add_next_step(new /datum/surgery_step/fluff/suture(src))
 
-	on_complete(mob/living/surgeon, mob/user)
+	on_complete(mob/living/surgeon, obj/item/tool)
 		patient.HealDamage("All", 15, 0)
 		regenerate_surgery_steps()
 
@@ -25,7 +25,7 @@
 		return FALSE
 
 
-/datum/surgery/heal_burn
+/datum/surgery/carbon/heal_burn
 	name = "Tend burns"
 	desc = "Heal BURN damage with bandages."
 
@@ -33,7 +33,7 @@
 		add_next_step(new /datum/surgery_step/fluff/bandage(src))
 		add_next_step(new /datum/surgery_step/fluff/suture(src))
 
-	on_complete(mob/living/surgeon, mob/user)
+	on_complete(mob/living/surgeon, obj/item/tool)
 		..()
 		surgeon.HealDamage("All", 0, 15)
 		regenerate_surgery_steps()
@@ -42,17 +42,18 @@
 			return TRUE
 		return FALSE
 
-/datum/surgery/tend_bleeding
+/datum/surgery/carbon/tend_bleeding
 	name = "Tend bleeding"
 	desc = "Mend bleeding wounds with a suture."
 
 	infer_surgery_stage()
 		surgery_steps[1].finished = (patient.bleeding == 0)
+		..()
 
 	generate_surgery_steps()
 		add_next_step(new /datum/surgery_step/fluff/suture(src))
 
-	on_complete(mob/living/surgeon, mob/user)
+	on_complete(mob/living/surgeon, obj/item/tool)
 		patient.bleeding = 0
 
 	surgery_possible(mob/living/surgeon)
@@ -60,14 +61,14 @@
 			return TRUE
 		return FALSE
 
-/datum/surgery/cauterize
+/datum/surgery/carbon/cauterize
 	visible = FALSE
 	implicit = TRUE
 	cancel_possible()
 		return FALSE
 	surgery_conditions_met(mob/living/surgeon, obj/item/tool)
 		return TRUE
-	on_complete(mob/living/surgeon, mob/user)
+	on_complete(mob/living/surgeon, obj/item/I)
 		if (patient.bleeding)
 			repair_bleeding_damage(patient, 50, rand(1,3))
 	head
@@ -85,8 +86,8 @@
 		generate_surgery_steps()
 			add_next_step( new/datum/surgery_step/cauterize/head(src))
 
-		on_complete(mob/living/surgeon, mob/user)
-			patient.surgeryHolder.cancel_surgery_by_id("brain_surgery", surgeon, user)
+		on_complete(mob/living/surgeon, obj/item/I)
+			patient.surgeryHolder.cancel_all_in_zone("head", surgeon, I)
 			..()
 
 	bleeding
@@ -99,8 +100,8 @@
 			add_next_step( new/datum/surgery_step/cauterize/bleeding(src))
 
 
-/datum/surgery/sutures
-	default_sub_surgeries = list(/datum/surgery/suture/head, /datum/surgery/suture/torso, /datum/surgery/suture/r_leg, /datum/surgery/suture/l_leg, /datum/surgery/suture/r_arm, /datum/surgery/suture/l_arm, /datum/surgery/suture/bleeding)
+/datum/surgery/carbon/sutures
+	default_sub_surgeries = list(/datum/surgery/carbon/suture/head, /datum/surgery/carbon/suture/torso, /datum/surgery/carbon/suture/r_leg, /datum/surgery/carbon/suture/l_leg, /datum/surgery/carbon/suture/r_arm, /datum/surgery/carbon/suture/l_arm, /datum/surgery/carbon/suture/bleeding)
 	name = "Suture"
 	desc = "Suture wounds on the head, torso, legs, or arms."
 	cancel_possible()
@@ -110,7 +111,7 @@
 
 
 
-/datum/surgery/suture
+/datum/surgery/carbon/suture
 	name = "Suture"
 	icon_state = "suture"
 	implicit = TRUE
@@ -122,8 +123,8 @@
 	surgery_possible(mob/living/surgeon)
 		if (surgeon.zone_sel.selecting != affected_zone)
 			return FALSE
-		var/list/datum/surgery/surgeries = holder.get_surgeries_by_zone(affected_zone)
-		for (var/datum/surgery/surgery in surgeries)
+		var/list/datum/surgery/carbon/surgeries = holder.get_surgeries_by_zone(affected_zone)
+		for (var/datum/surgery/carbon/surgery in surgeries)
 			if (surgery.cancel_possible())
 				return TRUE
 

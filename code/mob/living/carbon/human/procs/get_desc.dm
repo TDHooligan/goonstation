@@ -229,16 +229,6 @@
 
 
 			if (src.organHolder.chest)
-				if (src.organHolder.chest.op_stage > 0.0)
-					if (src.organHolder.chest.op_stage < 2.0)
-						. += "<br>[SPAN_ALERT("<B>[Noun] has an indeterminate number of small surgical scars on [t_his] chest!</B>")]"
-					if (src.organHolder.chest.op_stage >= 2.0)
-						if (src.organHolder.heart)
-							. += "<br>[SPAN_ALERT("<B>[Noun]'s chest is cut wide open!</B>")]"
-						else
-							. += "<br>[SPAN_ALERT("<B>[Noun]'s chest is cut wide open and [t_his] heart has been removed!</B>")]"
-						if (!src.chest_cavity_clamped)
-							. += "<br>[SPAN_ALERT("<B>Blood is slowly seeping out of [noun_s] un-clamped chest wound.</B>")]"
 				//tailstuff
 				if (src.organHolder.tail) // Has a tail?
 					// Comment if their tail deviates from the norm.

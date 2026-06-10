@@ -897,7 +897,6 @@
 							else
 								G.show_text(SPAN_ALERT("You feel yourself being dragged out of the afterlife!"))
 								G.mind?.transfer_to(src.donor)
-				newBrain.op_stage = op_stage
 				src.brain = newBrain
 				src.head.brain = newBrain
 

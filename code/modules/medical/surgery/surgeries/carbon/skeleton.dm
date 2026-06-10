@@ -1,5 +1,5 @@
 
-/datum/surgery/skeleton
+/datum/surgery/carbon/skeleton
 	id = "skeleton_surgery"
 	name = "Skeleton Surgery"
 	desc = "Modify an ossified patients' limbs."
@@ -7,19 +7,19 @@
 	implicit = TRUE
 
 	default_sub_surgeries = list(
-	/datum/surgery/limb/skeleton/arm/l_arm,
-	/datum/surgery/limb/skeleton/arm/r_arm,
-	/datum/surgery/limb/skeleton/leg/l_leg,
-	/datum/surgery/limb/skeleton/leg/r_leg,
-	/datum/surgery/organ/skeleton_tail,
-	/datum/surgery/organ/skeleton_head
+	/datum/surgery/carbon/limb/skeleton/arm/l_arm,
+	/datum/surgery/carbon/limb/skeleton/arm/r_arm,
+	/datum/surgery/carbon/limb/skeleton/leg/l_leg,
+	/datum/surgery/carbon/limb/skeleton/leg/r_leg,
+	/datum/surgery/carbon/organ/skeleton_tail,
+	/datum/surgery/carbon/organ/skeleton_head
 	)
 
 	surgery_possible(mob/living/surgeon)
 		return isskeleton(patient)
 
 
-/datum/surgery/limb/skeleton
+/datum/surgery/carbon/limb/skeleton
 	generate_surgery_steps(mob/living/surgeon, mob/user)
 		add_next_step(new/datum/surgery_step/limb/skeleton/wrench(src, limb_var_name))
 		add_next_step(new/datum/surgery_step/limb/skeleton/crowbar(src, limb_var_name))
@@ -69,7 +69,7 @@
 
 
 
-/datum/surgery/organ/skeleton_head
+/datum/surgery/carbon/organ/skeleton_head
 	implicit = TRUE
 	visible = FALSE
 	affected_zone = "head"
@@ -80,8 +80,6 @@
 	infer_surgery_stage()
 		var/mob/living/carbon/human/C = patient
 		var/no_head = !C.organHolder.get_organ("head")
-		surgery_steps[1].finished = no_head || C.organHolder.head.op_stage >= 1
-		surgery_steps[2].finished = no_head || C.organHolder.head.op_stage >= 2
 		surgery_steps[3].finished = no_head
 		return
 
@@ -100,7 +98,7 @@
 		if (surgeon.a_intent == INTENT_HARM)
 			return FALSE
 		return TRUE
-/datum/surgery/organ/skeleton_tail
+/datum/surgery/carbon/organ/skeleton_tail
 	implicit = TRUE
 	visible = FALSE
 	affected_zone = "head"
@@ -109,6 +107,7 @@
 	desc = "Remove the patients' tail."
 	icon_state = "tail"
 	organ_var_name = "tail"
+	can_cancel = FALSE
 	infer_surgery_stage()
 		var/mob/living/carbon/human/C = patient
 		var/organ = C.organHolder.get_organ(organ_var_name)

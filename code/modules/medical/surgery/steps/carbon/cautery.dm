@@ -3,6 +3,8 @@
 	success_damage = 5
 	damage_type = DAMAGE_BURN
 
+
+	// migrated from old surgery code - is this cauterization surgery done quickly or with an action bar
 	proc/is_quick_surgery(mob/surgeon,obj/item/tool)
 		var/mob/living/carbon/human/patient = parent_surgery.patient
 		if (!patient)
